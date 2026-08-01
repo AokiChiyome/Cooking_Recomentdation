@@ -72,6 +72,7 @@ npx prisma generate
 Có 2 cách tạo bảng, chọn 1:
 
 **Cách A — dùng đúng script SQL gốc của bạn** (khuyến nghị vì đã test kỹ):
+
 ```bash
 cockroach sql --insecure --host=localhost:26257 -d backend_db -f schema.sql
 # rồi tạo thêm bảng refresh_tokens (không có trong script gốc):
@@ -81,6 +82,7 @@ npx prisma migrate resolve --applied <tên_migration>
 ```
 
 **Cách B — để Prisma tự tạo toàn bộ bảng từ `schema.prisma`** (đơn giản hơn, tương đương về cấu trúc):
+
 ```bash
 npx prisma migrate dev --name init
 ```
@@ -102,29 +104,30 @@ Server mặc định chạy tại `http://localhost:4000`.
 
 ### Auth
 
-| Method | Endpoint             | Mô tả                          | Cần token |
-|--------|-----------------------|--------------------------------|-----------|
-| GET    | /api/health            | Kiểm tra server                | Không     |
-| POST   | /api/auth/register      | Đăng ký tài khoản              | Không     |
-| POST   | /api/auth/login         | Đăng nhập                      | Không     |
-| POST   | /api/auth/refresh       | Làm mới access token           | Không     |
-| POST   | /api/auth/logout        | Đăng xuất (thu hồi refresh token) | Không |
-| GET    | /api/auth/me            | Lấy thông tin user hiện tại    | Có |
+| Method | Endpoint           | Mô tả                             | Cần token |
+| ------ | ------------------ | --------------------------------- | --------- |
+| GET    | /api/health        | Kiểm tra server                   | Không     |
+| POST   | /api/auth/register | Đăng ký tài khoản                 | Không     |
+| POST   | /api/auth/login    | Đăng nhập                         | Không     |
+| POST   | /api/auth/refresh  | Làm mới access token              | Không     |
+| POST   | /api/auth/logout   | Đăng xuất (thu hồi refresh token) | Không     |
+| GET    | /api/auth/me       | Lấy thông tin user hiện tại       | Có        |
 
 ### CRUD entities
 
 Toàn bộ **GET** (list + detail) đều public, hỗ trợ `?page=&limit=` (mặc định `page=1, limit=20, max=100`). Toàn bộ **POST/PUT/DELETE** yêu cầu `Authorization: Bearer <accessToken>` và đều chạy trong **Prisma transaction** (`prisma.$transaction`) để đảm bảo tính nhất quán khi ghi nhiều bảng liên quan cùng lúc.
 
-| Resource | Base path | Query filter hỗ trợ (GET list) |
-|---|---|---|
-| Categories (danh mục nguyên liệu) | `/api/categories` | `search`, `parentCategoryId` |
-| Ingredients | `/api/ingredients` | `search`, `categoryId` |
-| Units | `/api/units` | `search` |
-| Recipes | `/api/recipes` | `search`, `categoryId`, `difficulty`, `maxCookTime` |
-| Recipe categories | `/api/recipe-categories` | `search`, `parentCategoryId` |
-| User ingredients (kho cá nhân, cần token cho mọi request) | `/api/user-ingredients` | — |
+| Resource                                                  | Base path                | Query filter hỗ trợ (GET list)                      |
+| --------------------------------------------------------- | ------------------------ | --------------------------------------------------- |
+| Categories (danh mục nguyên liệu)                         | `/api/categories`        | `search`, `parentCategoryId`                        |
+| Ingredients                                               | `/api/ingredients`       | `search`, `categoryId`                              |
+| Units                                                     | `/api/units`             | `search`                                            |
+| Recipes                                                   | `/api/recipes`           | `search`, `categoryId`, `difficulty`, `maxCookTime` |
+| Recipe categories                                         | `/api/recipe-categories` | `search`, `parentCategoryId`                        |
+| User ingredients (kho cá nhân, cần token cho mọi request) | `/api/user-ingredients`  | —                                                   |
 
 Mỗi resource ở trên (trừ `user-ingredients`) đều có đầy đủ:
+
 ```
 GET    /api/<resource>          # danh sách (phân trang)
 GET    /api/<resource>/:id      # chi tiết
@@ -134,6 +137,7 @@ DELETE /api/<resource>/:id      # xoá (transaction)
 ```
 
 `user-ingredients` dùng `ingredientId` làm khoá thay vì `id` riêng (vì PK là cặp `user_id + ingredient_id`):
+
 ```
 GET    /api/user-ingredients                 # kho nguyên liệu của user hiện tại
 GET    /api/user-ingredients/:ingredientId
@@ -169,24 +173,26 @@ Nếu bất kỳ bước nào trong transaction lỗi (VD: `ingredientId` không
 
 Toàn bộ nằm dưới `/api/recipes/...`, đặt trước route `/:id` trong code để tránh xung đột path. Các API dùng "kho nguyên liệu của user" đều lấy theo **user đang đăng nhập** (`req.user.userId` từ access token), không truyền `userId` qua query.
 
-| # | Query gốc | Endpoint |
-|---|---|---|
-| 1 | Tìm món theo nguyên liệu | `GET /api/recipes/search-by-ingredient?ingredientName=Ca chua` |
-| 2 | Tìm món có nhiều nguyên liệu nhất | `GET /api/recipes/most-ingredients?limit=10` |
-| 3 | Liệt kê nguyên liệu của một món theo tên | `GET /api/recipes/by-name/Pho bo/ingredients` |
-| 4 | Nguyên liệu hiện có của user | `GET /api/user-ingredients` (cần token) |
-| 5 | Món user nấu được (đủ 100% nguyên liệu) | `GET /api/recipes/cookable` (cần token) |
-| 6 | Món user còn thiếu nguyên liệu gì | `GET /api/recipes/by-name/Pho bo/missing-ingredients` (cần token) |
-| 7 | Món nấu được gần đủ (≥ threshold%) | `GET /api/recipes/almost-cookable?threshold=70` (cần token) |
-| 8 | Món có thời gian nấu ngắn nhất | `GET /api/recipes/quickest?limit=10` |
-| 9 | Món dùng đồng thời nhiều nguyên liệu (X và Y...) | `GET /api/recipes/search-by-ingredients?names=Thit bo,Hanh tay` |
+| #   | Query gốc                                        | Endpoint                                                          |
+| --- | ------------------------------------------------ | ----------------------------------------------------------------- |
+| 1   | Tìm món theo nguyên liệu                         | `GET /api/recipes/search-by-ingredient?ingredientName=Ca chua`    |
+| 2   | Tìm món có nhiều nguyên liệu nhất                | `GET /api/recipes/most-ingredients?limit=10`                      |
+| 3   | Liệt kê nguyên liệu của một món theo tên         | `GET /api/recipes/by-name/Pho bo/ingredients`                     |
+| 4   | Nguyên liệu hiện có của user                     | `GET /api/user-ingredients` (cần token)                           |
+| 5   | Món user nấu được (đủ 100% nguyên liệu)          | `GET /api/recipes/cookable` (cần token)                           |
+| 6   | Món user còn thiếu nguyên liệu gì                | `GET /api/recipes/by-name/Pho bo/missing-ingredients` (cần token) |
+| 7   | Món nấu được gần đủ (≥ threshold%)               | `GET /api/recipes/almost-cookable?threshold=70` (cần token)       |
+| 8   | Món có thời gian nấu ngắn nhất                   | `GET /api/recipes/quickest?limit=10`                              |
+| 9   | Món dùng đồng thời nhiều nguyên liệu (X và Y...) | `GET /api/recipes/search-by-ingredients?names=Thit bo,Hanh tay`   |
 
 Lưu ý cho endpoint theo tên (`by-name/:name/...`): tên món phải url-encode nếu có dấu cách/dấu tiếng Việt, ví dụ:
+
 ```bash
 curl "http://localhost:4000/api/recipes/by-name/Ph%E1%BB%9F%20b%C3%B2/ingredients"
 ```
 
 Ví dụ đầy đủ:
+
 ```bash
 # 5. Món hiện tại user có thể nấu
 curl http://localhost:4000/api/recipes/cookable \
@@ -212,8 +218,6 @@ curl "http://localhost:4000/api/recipes?search=pho&difficulty=3&page=1&limit=10"
 - Không xoá được `ingredient` đang được dùng trong công thức nào đó.
 - Không xoá được `unit` đang được dùng trong `recipe_ingredients` hoặc `user_ingredients`.
 - Xoá `recipe` sẽ dọn cả `recipe_steps`, `recipe_ingredients`, `recipe_recipe_categories` liên quan trong cùng transaction.
-
-
 
 ```bash
 curl -X POST http://localhost:4000/api/auth/register \
@@ -246,7 +250,78 @@ curl -X POST http://localhost:4000/api/auth/refresh \
   -d '{"refreshToken":"<refreshToken>"}'
 ```
 
-## 6. Cơ chế bảo mật đã áp dụng
+## 6. API Dashboard
+
+Toàn bộ nằm dưới `/api/dashboard/...`, đều yêu cầu đăng nhập (`Authorization: Bearer <accessToken>`). Vì bảng `users` hiện chưa có cột `role`, mọi user đã đăng nhập đều xem được — nếu cần giới hạn chỉ admin, bổ sung cột role rồi áp middleware `authorize("ADMIN")`.
+
+| Endpoint                                          | Mô tả                                                                        | Dùng cho                                          |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------- |
+| `GET /api/dashboard/summary`                      | Gộp toàn bộ dữ liệu bên dưới vào 1 response duy nhất                         | Load trang dashboard lần đầu (giảm số round-trip) |
+| `GET /api/dashboard/overview`                     | Tổng số recipes/ingredients/users/categories/units, thời gian nấu trung bình | Các "card" số liệu tổng quan                      |
+| `GET /api/dashboard/recipes-by-difficulty`        | Số công thức theo từng mức độ khó                                            | Pie/bar chart                                     |
+| `GET /api/dashboard/recipes-by-category?limit=10` | Top N danh mục có nhiều công thức nhất                                       | Bar chart                                         |
+| `GET /api/dashboard/top-ingredients?limit=10`     | Top N nguyên liệu được dùng nhiều nhất                                       | Bar chart                                         |
+| `GET /api/dashboard/cook-time-distribution`       | Số công thức theo khoảng thời gian nấu (0-30p, 31-60p, 61-120p, >120p)       | Bar chart                                         |
+| `GET /api/dashboard/recipes-trend?days=30`        | Số công thức tạo mới theo từng ngày, N ngày gần nhất (đủ cả ngày = 0)        | Line chart                                        |
+| `GET /api/dashboard/users-trend?days=30`          | Số user đăng ký mới theo từng ngày                                           | Line chart                                        |
+| `GET /api/dashboard/recent-recipes?limit=10`      | Danh sách công thức mới tạo gần đây, kèm người tạo                           | Bảng "Hoạt động gần đây"                          |
+| `GET /api/dashboard/recent-users?limit=10`        | Danh sách user mới đăng ký gần đây                                           | Bảng "User mới"                                   |
+
+Ví dụ:
+
+```bash
+curl http://localhost:4000/api/dashboard/summary \
+  -H "Authorization: Bearer <accessToken>"
+
+curl "http://localhost:4000/api/dashboard/recipes-trend?days=14" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+Response mẫu của `/summary`:
+
+```json
+{
+  "success": true,
+  "data": {
+    "overview": {
+      "totalRecipes": 42,
+      "totalIngredients": 120,
+      "totalUsers": 8,
+      "avgCookTimeMinutes": 45,
+      "...": "..."
+    },
+    "recipesByDifficulty": [
+      { "difficulty": "1", "count": 10 },
+      { "difficulty": "3", "count": 20 }
+    ],
+    "recipesByCategory": [
+      {
+        "recipeCategoryId": "...",
+        "recipeCategoryName": "Món chính",
+        "recipeCount": 15
+      }
+    ],
+    "topIngredients": [
+      {
+        "ingredientId": "...",
+        "ingredientName": "Thịt bò",
+        "usedInRecipeCount": 12
+      }
+    ],
+    "cookTimeDistribution": [{ "label": "0-30 phút", "count": 5 }],
+    "recipesTrend": [{ "date": "2026-07-19", "count": 2 }],
+    "recentRecipes": [
+      {
+        "recipeId": "...",
+        "recipeName": "Phở bò",
+        "createdByUser": { "firstName": "A", "lastName": "Nguyen" }
+      }
+    ]
+  }
+}
+```
+
+**Lưu ý hiệu năng**: `cookTimeDistribution` và các trend hiện tính bucket ở tầng ứng dụng (fetch rồi group trong Node) thay vì raw SQL `GROUP BY date_trunc`, phù hợp cho dữ liệu vừa/nhỏ (dashboard nội bộ). Nếu dữ liệu lớn (hàng trăm nghìn recipe trở lên), nên chuyển sang `prisma.$queryRaw` với `date_trunc('day', created_at)` để CockroachDB tự aggregate.
 
 - Mật khẩu được hash bằng **bcryptjs** (không lưu plaintext).
 - JWT tách riêng **access token** (ngắn hạn) và **refresh token** (dài hạn, lưu trong DB để có thể thu hồi/xoay vòng).
