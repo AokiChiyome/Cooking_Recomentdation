@@ -100,6 +100,8 @@ Server mặc định chạy tại `http://localhost:4000`.
 
 ## 5. API Endpoints
 
+### Auth
+
 | Method | Endpoint             | Mô tả                          | Cần token |
 |--------|-----------------------|--------------------------------|-----------|
 | GET    | /api/health            | Kiểm tra server                | Không     |
@@ -107,9 +109,111 @@ Server mặc định chạy tại `http://localhost:4000`.
 | POST   | /api/auth/login         | Đăng nhập                      | Không     |
 | POST   | /api/auth/refresh       | Làm mới access token           | Không     |
 | POST   | /api/auth/logout        | Đăng xuất (thu hồi refresh token) | Không |
-| GET    | /api/auth/me            | Lấy thông tin user hiện tại    | Có (Bearer access token) |
+| GET    | /api/auth/me            | Lấy thông tin user hiện tại    | Có |
 
-### Ví dụ Register
+### CRUD entities
+
+Toàn bộ **GET** (list + detail) đều public, hỗ trợ `?page=&limit=` (mặc định `page=1, limit=20, max=100`). Toàn bộ **POST/PUT/DELETE** yêu cầu `Authorization: Bearer <accessToken>` và đều chạy trong **Prisma transaction** (`prisma.$transaction`) để đảm bảo tính nhất quán khi ghi nhiều bảng liên quan cùng lúc.
+
+| Resource | Base path | Query filter hỗ trợ (GET list) |
+|---|---|---|
+| Categories (danh mục nguyên liệu) | `/api/categories` | `search`, `parentCategoryId` |
+| Ingredients | `/api/ingredients` | `search`, `categoryId` |
+| Units | `/api/units` | `search` |
+| Recipes | `/api/recipes` | `search`, `categoryId`, `difficulty`, `maxCookTime` |
+| Recipe categories | `/api/recipe-categories` | `search`, `parentCategoryId` |
+| User ingredients (kho cá nhân, cần token cho mọi request) | `/api/user-ingredients` | — |
+
+Mỗi resource ở trên (trừ `user-ingredients`) đều có đầy đủ:
+```
+GET    /api/<resource>          # danh sách (phân trang)
+GET    /api/<resource>/:id      # chi tiết
+POST   /api/<resource>          # tạo mới (transaction)
+PUT    /api/<resource>/:id      # cập nhật (transaction)
+DELETE /api/<resource>/:id      # xoá (transaction)
+```
+
+`user-ingredients` dùng `ingredientId` làm khoá thay vì `id` riêng (vì PK là cặp `user_id + ingredient_id`):
+```
+GET    /api/user-ingredients                 # kho nguyên liệu của user hiện tại
+GET    /api/user-ingredients/:ingredientId
+POST   /api/user-ingredients                 # thêm nguyên liệu vào kho
+PUT    /api/user-ingredients/:ingredientId   # cập nhật số lượng/đơn vị
+DELETE /api/user-ingredients/:ingredientId
+```
+
+### Ví dụ: tạo Recipe (transaction tạo recipe + steps + ingredients + categories cùng lúc)
+
+```bash
+curl -X POST http://localhost:4000/api/recipes \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <accessToken>" \
+  -d '{
+    "recipeName": "Phở bò",
+    "cookTime": 120,
+    "difficulty": "3",
+    "steps": [
+      { "stepNumber": 1, "description": "Ninh xương bò 6 tiếng" },
+      { "stepNumber": 2, "description": "Trần bánh phở và thịt bò" }
+    ],
+    "ingredients": [
+      { "ingredientId": "<uuid-nguyen-lieu>", "quantity": 2, "unitId": "<uuid-don-vi>" }
+    ],
+    "categoryIds": ["<uuid-danh-muc>"]
+  }'
+```
+
+Nếu bất kỳ bước nào trong transaction lỗi (VD: `ingredientId` không tồn tại), toàn bộ thao tác được **rollback**, không để lại dữ liệu rác (recipe mồ côi không có steps/ingredients).
+
+### API tra cứu / gợi ý Recipe (map trực tiếp từ 9 câu query SQL)
+
+Toàn bộ nằm dưới `/api/recipes/...`, đặt trước route `/:id` trong code để tránh xung đột path. Các API dùng "kho nguyên liệu của user" đều lấy theo **user đang đăng nhập** (`req.user.userId` từ access token), không truyền `userId` qua query.
+
+| # | Query gốc | Endpoint |
+|---|---|---|
+| 1 | Tìm món theo nguyên liệu | `GET /api/recipes/search-by-ingredient?ingredientName=Ca chua` |
+| 2 | Tìm món có nhiều nguyên liệu nhất | `GET /api/recipes/most-ingredients?limit=10` |
+| 3 | Liệt kê nguyên liệu của một món theo tên | `GET /api/recipes/by-name/Pho bo/ingredients` |
+| 4 | Nguyên liệu hiện có của user | `GET /api/user-ingredients` (cần token) |
+| 5 | Món user nấu được (đủ 100% nguyên liệu) | `GET /api/recipes/cookable` (cần token) |
+| 6 | Món user còn thiếu nguyên liệu gì | `GET /api/recipes/by-name/Pho bo/missing-ingredients` (cần token) |
+| 7 | Món nấu được gần đủ (≥ threshold%) | `GET /api/recipes/almost-cookable?threshold=70` (cần token) |
+| 8 | Món có thời gian nấu ngắn nhất | `GET /api/recipes/quickest?limit=10` |
+| 9 | Món dùng đồng thời nhiều nguyên liệu (X và Y...) | `GET /api/recipes/search-by-ingredients?names=Thit bo,Hanh tay` |
+
+Lưu ý cho endpoint theo tên (`by-name/:name/...`): tên món phải url-encode nếu có dấu cách/dấu tiếng Việt, ví dụ:
+```bash
+curl "http://localhost:4000/api/recipes/by-name/Ph%E1%BB%9F%20b%C3%B2/ingredients"
+```
+
+Ví dụ đầy đủ:
+```bash
+# 5. Món hiện tại user có thể nấu
+curl http://localhost:4000/api/recipes/cookable \
+  -H "Authorization: Bearer <accessToken>"
+
+# 7. Món nấu được gần đủ, từ 70% nguyên liệu trở lên
+curl "http://localhost:4000/api/recipes/almost-cookable?threshold=70" \
+  -H "Authorization: Bearer <accessToken>"
+
+# 9. Món dùng cả "Thit bo" và "Hanh tay"
+curl "http://localhost:4000/api/recipes/search-by-ingredients?names=Thit%20bo,Hanh%20tay"
+```
+
+### Ví dụ: lấy danh sách Recipe có filter
+
+```bash
+curl "http://localhost:4000/api/recipes?search=pho&difficulty=3&page=1&limit=10"
+```
+
+### Quy tắc nghiệp vụ đáng chú ý khi xoá (trong transaction)
+
+- Không xoá được `category`/`recipe-category` đang có danh mục con.
+- Không xoá được `ingredient` đang được dùng trong công thức nào đó.
+- Không xoá được `unit` đang được dùng trong `recipe_ingredients` hoặc `user_ingredients`.
+- Xoá `recipe` sẽ dọn cả `recipe_steps`, `recipe_ingredients`, `recipe_recipe_categories` liên quan trong cùng transaction.
+
+
 
 ```bash
 curl -X POST http://localhost:4000/api/auth/register \
