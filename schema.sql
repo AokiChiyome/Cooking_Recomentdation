@@ -9,7 +9,8 @@ drop table if exists
     categories,
     units,
     recipes,
-    users
+    users,
+    refresh_tokens 
 cascade;
 
 create table users (
@@ -27,9 +28,10 @@ create table users (
 );
 -- ==================================================================
 create table categories (
-	ingredient_category_id UUID primary key default gen_random_uuid(),
-	ingredient_category_name string not null,
+	category_id UUID primary key default gen_random_uuid(),
+	category_name string not null,
 	parent_category_id UUID,
+	category_type STRING,
 	
 	created_at timestamptz not null default now(),
     created_by UUID not null,
@@ -40,7 +42,7 @@ create table categories (
 alter table categories 
 add constraint fk_parent_category
 foreign key (parent_category_id)
-references categories(ingredient_category_id);
+references categories(category_id);
 
 alter table categories 
 add constraint fk_created_by_users
@@ -75,10 +77,10 @@ references users(user_id);
 -- ==================================================================
 create table ingredient_category (
 	ingredient_id UUID not null,
-    ingredient_category_id UUID not null,
+    category_id UUID not null,
     
     primary key (ingredient_id,
-ingredient_category_id),
+category_id),
     
     constraint fk_ingredientCategory_ingredient 
         foreign key (ingredient_id) 
@@ -86,9 +88,9 @@ ingredient_category_id),
         on
 delete
     cascade,
-    constraint fk_ingredientCategory_category 
-        foreign key (ingredient_category_id) 
-        references categories(ingredient_category_id) 
+    constraint fk_ingredient_categories
+        foreign key (category_id) 
+        references categories(category_id) 
         on
     delete
         cascade
@@ -97,9 +99,10 @@ delete
 create table recipes (
     recipe_id UUID primary key default gen_random_uuid(),
     recipe_name string not null,
-    recipe_image string,
     recipe_description string,
     cook_time INT not null,
+    khau_phan STRING,
+    hinh_anh STRING,
     difficulty CHAR(1) not null default '0',
 
     created_at timestamptz not null default now(),
@@ -138,7 +141,7 @@ create table units (
 );
 -- ==================================================================
 create table recipe_ingredients (
-    recipe_ingredient_id UUID not null,
+    recipe_id UUID not null,
     ingredient_id UUID not null,
     
     quantity DECIMAL not null,
@@ -150,10 +153,10 @@ constraint fk_recipe_ingredients_unit
     on
 delete
     restrict,
-    primary key (recipe_ingredient_id,
+    primary key (recipe_id,
     ingredient_id),
     constraint fk_recipe
-        foreign key (recipe_ingredient_id)
+        foreign key (recipe_id)
         references recipes(recipe_id)
         on
     delete
@@ -199,51 +202,40 @@ CREATE TABLE user_ingredients (
 );
 -- ==================================================================
 create table recipe_categories (
-    recipe_category_id UUID primary key default gen_random_uuid(),
-
-    recipe_category_name string not null,
-    parent_category_id UUID,
-
-    created_at timestamptz not null default now(),
-    created_by UUID not null,
-
-    updated_at timestamptz not null default now(),
-    updated_by UUID not null,
-
-    constraint fk_recipe_categories_parent
-        foreign key (parent_category_id)
-        references recipe_categories(recipe_category_id)
-        on
-delete
-    set
-    null,
-    constraint uq_recipe_category_name_parent
-        unique (recipe_category_name,
-    parent_category_id)
-);
--- ==================================================================
-create table recipe_recipe_categories (
     recipe_id UUID not null,
-    recipe_category_id UUID not null,
+    category_id UUID not null,
 
     created_at timestamptz not null default now(),
     created_by UUID not null,
 
-    primary key (recipe_id,
-recipe_category_id),
+    primary key (recipe_id,category_id),
 
-    constraint fk_recipe_recipe_categories_recipe
+    constraint fk_recipe_categories_recipe
         foreign key (recipe_id)
         references recipes(recipe_id)
         on
 delete
     cascade,
-    constraint fk_recipe_recipe_categories_category
-        foreign key (recipe_category_id)
-        references recipe_categories(recipe_category_id)
+    constraint fk_recipe_categories_category
+        foreign key (category_id)
+        references categories(category_id)
         on
     delete
         cascade
+);
+-- ===
+CREATE TABLE refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    token STRING NOT NULL UNIQUE,
+    user_id UUID NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    revoked BOOL NOT NULL DEFAULT false,
+
+    CONSTRAINT fk_refresh_tokens_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON DELETE CASCADE
 );
 -- ===
 create index idx_ingredients_created_by
@@ -262,9 +254,9 @@ create index idx_recipes_updated_by
     on
 recipes(updated_by);
 
-create index idx_ingredient_category_category
+create index idx_ingredient_category
     on
-ingredient_category(ingredient_category_id);
+ingredient_category(category_id);
 
 create index idx_user_ingredients_ingredient
     on
@@ -273,11 +265,3 @@ user_ingredients(ingredient_id);
 create index idx_categories_parent
     on
 categories(parent_category_id);
-
-create index idx_recipe_categories_parent
-    on
-recipe_categories(parent_category_id);
-
-create index idx_recipe_recipe_categories_category
-    on
-recipe_recipe_categories(recipe_category_id);
