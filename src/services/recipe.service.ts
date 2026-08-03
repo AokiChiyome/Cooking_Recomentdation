@@ -138,7 +138,7 @@ export const recipeService = {
       const recipe = await tx.recipe.create({
         data: {
           recipeName: input.recipeName,
-          recipeImage: input.recipeImage ?? null,
+          hinh_anh: input.recipeImage ?? null,
           recipeDescription: input.recipeDescription ?? null,
           cookTime: input.cookTime,
           difficulty: input.difficulty ?? "0",

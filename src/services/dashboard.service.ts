@@ -213,7 +213,7 @@ export const dashboardService = {
       select: {
         recipeId: true,
         recipeName: true,
-        recipeImage: true,
+        hinh_anh: true,
         cookTime: true,
         difficulty: true,
         createdAt: true,
