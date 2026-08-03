@@ -14,10 +14,13 @@ interface ListQuery {
   categoryId?: string;
 }
 
-async function ensureCategoriesExist(tx: Prisma.TransactionClient, categoryIds: string[]) {
+async function ensureCategoriesExist(
+  tx: Prisma.TransactionClient,
+  categoryIds: string[],
+) {
   if (categoryIds.length === 0) return;
   const count = await tx.category.count({
-    where: { ingredientCategoryId: { in: categoryIds } },
+    where: { categoryId: { in: categoryIds } },
   });
   if (count !== categoryIds.length) {
     throw ApiError.badRequest("Một hoặc nhiều categoryIds không tồn tại");
@@ -33,7 +36,7 @@ export const ingredientService = {
         ingredientName: { contains: query.search, mode: "insensitive" },
       }),
       ...(query.categoryId && {
-        categoryLinks: { some: { ingredientCategoryId: query.categoryId } },
+        categoryLinks: { some: { categoryId: query.categoryId } },
       }),
     };
 
@@ -72,47 +75,53 @@ export const ingredientService = {
   },
 
   async create(input: CreateIngredientInput, userId: string) {
-    return prisma.$transaction(async (tx) => {
-      await ensureCategoriesExist(tx, input.categoryIds ?? []);
+    return prisma
+      .$transaction(async (tx) => {
+        await ensureCategoriesExist(tx, input.categoryIds ?? []);
 
-      const ingredient = await tx.ingredient.create({
-        data: {
-          ingredientName: input.ingredientName,
-          createdBy: userId,
-          updatedBy: userId,
-        },
-      });
-
-      if (input.categoryIds && input.categoryIds.length > 0) {
-        await tx.ingredientCategoryLink.createMany({
-          data: input.categoryIds.map((categoryId) => ({
-            ingredientId: ingredient.ingredientId,
-            ingredientCategoryId: categoryId,
-          })),
+        const ingredient = await tx.ingredient.create({
+          data: {
+            ingredientName: input.ingredientName,
+            createdBy: userId,
+            updatedBy: userId,
+          },
         });
-      }
 
-      return tx.ingredient.findUniqueOrThrow({
-        where: { ingredientId: ingredient.ingredientId },
-        include: { categoryLinks: { include: { category: true } } },
-      });
-    }).then(ingredientService.formatIngredient);
+        if (input.categoryIds && input.categoryIds.length > 0) {
+          await tx.ingredientCategoryLink.createMany({
+            data: input.categoryIds.map((categoryId) => ({
+              ingredientId: ingredient.ingredientId,
+              categoryId: categoryId,
+            })),
+          });
+        }
+
+        return tx.ingredient.findUniqueOrThrow({
+          where: { ingredientId: ingredient.ingredientId },
+          include: { categoryLinks: { include: { category: true } } },
+        });
+      })
+      .then(ingredientService.formatIngredient);
   },
 
   async update(id: string, input: UpdateIngredientInput, userId: string) {
     const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.ingredient.findUnique({ where: { ingredientId: id } });
+      const existing = await tx.ingredient.findUnique({
+        where: { ingredientId: id },
+      });
       if (!existing) throw ApiError.notFound("Không tìm thấy nguyên liệu");
 
       if (input.categoryIds) {
         await ensureCategoriesExist(tx, input.categoryIds);
         // Thay toàn bộ liên kết category bằng danh sách mới
-        await tx.ingredientCategoryLink.deleteMany({ where: { ingredientId: id } });
+        await tx.ingredientCategoryLink.deleteMany({
+          where: { ingredientId: id },
+        });
         if (input.categoryIds.length > 0) {
           await tx.ingredientCategoryLink.createMany({
             data: input.categoryIds.map((categoryId) => ({
               ingredientId: id,
-              ingredientCategoryId: categoryId,
+              categoryId: categoryId,
             })),
           });
         }
@@ -140,7 +149,9 @@ export const ingredientService = {
 
   async remove(id: string) {
     return prisma.$transaction(async (tx) => {
-      const existing = await tx.ingredient.findUnique({ where: { ingredientId: id } });
+      const existing = await tx.ingredient.findUnique({
+        where: { ingredientId: id },
+      });
       if (!existing) throw ApiError.notFound("Không tìm thấy nguyên liệu");
 
       const usedInRecipe = await tx.recipeIngredient.findFirst({
@@ -148,11 +159,13 @@ export const ingredientService = {
       });
       if (usedInRecipe) {
         throw ApiError.badRequest(
-          "Không thể xoá nguyên liệu đang được dùng trong công thức nấu ăn"
+          "Không thể xoá nguyên liệu đang được dùng trong công thức nấu ăn",
         );
       }
 
-      await tx.ingredientCategoryLink.deleteMany({ where: { ingredientId: id } });
+      await tx.ingredientCategoryLink.deleteMany({
+        where: { ingredientId: id },
+      });
       await tx.userIngredient.deleteMany({ where: { ingredientId: id } });
       await tx.ingredient.delete({ where: { ingredientId: id } });
 

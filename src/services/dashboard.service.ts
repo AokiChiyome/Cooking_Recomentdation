@@ -95,29 +95,41 @@ export const dashboardService = {
 
   // Top N danh mục công thức có nhiều recipe nhất
   async recipesByCategory(limit = 10) {
-    const grouped = await prisma.recipeRecipeCategory.groupBy({
-      by: ["recipeCategoryId"],
-      _count: { _all: true },
-      orderBy: { _count: { recipeCategoryId: "desc" } },
+    const grouped = await prisma.recipeCategory.groupBy({
+      by: ["categoryId"],
+      _count: {
+        recipeId: true,
+      },
+      orderBy: {
+        _count: {
+          recipeId: "desc",
+        },
+      },
       take: limit,
     });
 
     if (grouped.length === 0) return [];
 
-    const categories = await prisma.recipeCategory.findMany({
+    const categories = await prisma.category.findMany({
       where: {
-        recipeCategoryId: { in: grouped.map((g: any) => g.recipeCategoryId) },
+        categoryId: {
+          in: grouped.map((g) => g.categoryId),
+        },
       },
-      select: { recipeCategoryId: true, recipeCategoryName: true },
+      select: {
+        categoryId: true,
+        categoryName: true,
+      },
     });
+
     const nameMap = new Map(
-      categories.map((c: any) => [c.recipeCategoryId, c.recipeCategoryName]),
+      categories.map((c) => [c.categoryId, c.categoryName]),
     );
 
-    return grouped.map((g: any) => ({
-      recipeCategoryId: g.recipeCategoryId,
-      recipeCategoryName: nameMap.get(g.recipeCategoryId) ?? "N/A",
-      recipeCount: g._count._all,
+    return grouped.map((g) => ({
+      categoryId: g.categoryId,
+      categoryName: nameMap.get(g.categoryId) ?? "N/A",
+      recipeCount: g._count.recipeId,
     }));
   },
 

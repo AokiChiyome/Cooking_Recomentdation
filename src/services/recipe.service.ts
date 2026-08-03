@@ -2,7 +2,10 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { ApiError } from "../utils/ApiError";
 import { buildMeta, getPagination } from "../utils/pagination";
-import { CreateRecipeInput, UpdateRecipeInput } from "../validators/recipe.validator";
+import {
+  CreateRecipeInput,
+  UpdateRecipeInput,
+} from "../validators/recipe.validator";
 
 interface ListQuery {
   page?: number;
@@ -33,26 +36,37 @@ function formatRecipe(recipe: any) {
   };
 }
 
-async function ensureIngredientsExist(tx: Prisma.TransactionClient, ingredientIds: string[]) {
+async function ensureIngredientsExist(
+  tx: Prisma.TransactionClient,
+  ingredientIds: string[],
+) {
   const count = await tx.ingredient.count({
     where: { ingredientId: { in: ingredientIds } },
   });
   if (count !== ingredientIds.length) {
-    throw ApiError.badRequest("Một hoặc nhiều ingredientId trong danh sách nguyên liệu không tồn tại");
+    throw ApiError.badRequest(
+      "Một hoặc nhiều ingredientId trong danh sách nguyên liệu không tồn tại",
+    );
   }
 }
 
-async function ensureCategoriesExist(tx: Prisma.TransactionClient, categoryIds: string[]) {
+async function ensureCategoriesExist(
+  tx: Prisma.TransactionClient,
+  categoryIds: string[],
+) {
   if (categoryIds.length === 0) return;
   const count = await tx.recipeCategory.count({
-    where: { recipeCategoryId: { in: categoryIds } },
+    where: { categoryId: { in: categoryIds } },
   });
   if (count !== categoryIds.length) {
     throw ApiError.badRequest("Một hoặc nhiều categoryIds không tồn tại");
   }
 }
 
-async function ensureUnitsExist(tx: Prisma.TransactionClient, unitIds: string[]) {
+async function ensureUnitsExist(
+  tx: Prisma.TransactionClient,
+  unitIds: string[],
+) {
   if (unitIds.length === 0) return;
   const count = await tx.unit.count({ where: { unitId: { in: unitIds } } });
   if (count !== unitIds.length) {
@@ -71,7 +85,7 @@ export const recipeService = {
       ...(query.difficulty && { difficulty: query.difficulty }),
       ...(query.maxCookTime && { cookTime: { lte: query.maxCookTime } }),
       ...(query.categoryId && {
-        recipeCategories: { some: { recipeCategoryId: query.categoryId } },
+        recipeCategories: { some: { categoryId: query.categoryId } },
       }),
     };
 
@@ -143,7 +157,7 @@ export const recipeService = {
 
       await tx.recipeIngredient.createMany({
         data: input.ingredients.map((i) => ({
-          recipeIngredientId: recipe.recipeId,
+          recipeId: recipe.recipeId,
           ingredientId: i.ingredientId,
           quantity: i.quantity,
           unitId: i.unitId ?? null,
@@ -151,10 +165,10 @@ export const recipeService = {
       });
 
       if (input.categoryIds && input.categoryIds.length > 0) {
-        await tx.recipeRecipeCategory.createMany({
+        await tx.recipeCategory.createMany({
           data: input.categoryIds.map((categoryId) => ({
             recipeId: recipe.recipeId,
-            recipeCategoryId: categoryId,
+            categoryId: categoryId,
             createdBy: userId,
           })),
         });
@@ -189,13 +203,19 @@ export const recipeService = {
       await tx.recipe.update({
         where: { recipeId: id },
         data: {
-          ...(input.recipeName !== undefined && { recipeName: input.recipeName }),
-          ...(input.recipeImage !== undefined && { recipeImage: input.recipeImage }),
+          ...(input.recipeName !== undefined && {
+            recipeName: input.recipeName,
+          }),
+          ...(input.recipeImage !== undefined && {
+            recipeImage: input.recipeImage,
+          }),
           ...(input.recipeDescription !== undefined && {
             recipeDescription: input.recipeDescription,
           }),
           ...(input.cookTime !== undefined && { cookTime: input.cookTime }),
-          ...(input.difficulty !== undefined && { difficulty: input.difficulty }),
+          ...(input.difficulty !== undefined && {
+            difficulty: input.difficulty,
+          }),
           updatedBy: userId,
           updatedAt: new Date(),
         },
@@ -215,10 +235,10 @@ export const recipeService = {
 
       // Thay toàn bộ danh sách nguyên liệu nếu có gửi lên
       if (input.ingredients) {
-        await tx.recipeIngredient.deleteMany({ where: { recipeIngredientId: id } });
+        await tx.recipeIngredient.deleteMany({ where: { recipeId: id } });
         await tx.recipeIngredient.createMany({
           data: input.ingredients.map((i) => ({
-            recipeIngredientId: id,
+            recipeId: id,
             ingredientId: i.ingredientId,
             quantity: i.quantity,
             unitId: i.unitId ?? null,
@@ -228,12 +248,12 @@ export const recipeService = {
 
       // Thay toàn bộ danh sách danh mục nếu có gửi lên
       if (input.categoryIds) {
-        await tx.recipeRecipeCategory.deleteMany({ where: { recipeId: id } });
+        await tx.recipeCategory.deleteMany({ where: { recipeId: id } });
         if (input.categoryIds.length > 0) {
-          await tx.recipeRecipeCategory.createMany({
+          await tx.recipeCategory.createMany({
             data: input.categoryIds.map((categoryId) => ({
               recipeId: id,
-              recipeCategoryId: categoryId,
+              categoryId: categoryId,
               createdBy: userId,
             })),
           });
@@ -256,8 +276,8 @@ export const recipeService = {
 
       // Xoá tường minh theo thứ tự để đảm bảo tính nhất quán trong transaction
       // (dù các FK liên quan đã có onDelete: Cascade sẵn).
-      await tx.recipeRecipeCategory.deleteMany({ where: { recipeId: id } });
-      await tx.recipeIngredient.deleteMany({ where: { recipeIngredientId: id } });
+      await tx.recipeCategory.deleteMany({ where: { recipeId: id } });
+      await tx.recipeIngredient.deleteMany({ where: { recipeId: id } });
       await tx.recipeStep.deleteMany({ where: { recipeId: id } });
       await tx.recipe.delete({ where: { recipeId: id } });
 
