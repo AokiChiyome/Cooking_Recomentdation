@@ -1,84 +1,63 @@
-// Prisma schema khớp với script SQL CockroachDB do người dùng cung cấp.
-// Toàn bộ tên bảng/cột giữ nguyên (snake_case) thông qua @map / @@map.
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "cockroachdb"
-  url      = env("DATABASE_URL")
 }
 
-// ==================================================================
-// USERS
-// ==================================================================
 model User {
-  userId    String   @id @default(dbgenerated("gen_random_uuid()")) @map("user_id") @db.Uuid
-  firstName String   @map("first_name")
-  lastName  String?  @map("last_name")
-  email     String   @unique
-  password  String
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  createdBy String   @map("created_by") @db.Uuid
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-  updatedBy String   @map("updated_by") @db.Uuid
-
-  // Quan hệ ngược (audit fields của các bảng khác trỏ về user này)
-  categoriesCreated       Category[]           @relation("CategoryCreatedBy")
-  categoriesUpdated       Category[]           @relation("CategoryUpdatedBy")
-  ingredientsCreated      Ingredient[]         @relation("IngredientCreatedBy")
-  ingredientsUpdated      Ingredient[]         @relation("IngredientUpdatedBy")
-  recipesCreated          Recipe[]             @relation("RecipeCreatedBy")
-  recipesUpdated          Recipe[]             @relation("RecipeUpdatedBy")
-  userIngredients         UserIngredient[]
-  refreshTokens           RefreshToken[]
+  userId             String           @id @default(dbgenerated("gen_random_uuid()")) @map("user_id") @db.Uuid
+  firstName          String           @map("first_name")
+  lastName           String?          @map("last_name")
+  email              String           @unique
+  password           String
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy          String           @map("created_by") @db.Uuid
+  updatedAt          DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy          String           @map("updated_by") @db.Uuid
+  categoriesCreated  Category[]       @relation("CategoryCreatedBy")
+  categoriesUpdated  Category[]       @relation("CategoryUpdatedBy")
+  ingredientsCreated Ingredient[]     @relation("IngredientCreatedBy")
+  ingredientsUpdated Ingredient[]     @relation("IngredientUpdatedBy")
+  recipesCreated     Recipe[]         @relation("RecipeCreatedBy")
+  recipesUpdated     Recipe[]         @relation("RecipeUpdatedBy")
+  refresh_tokens     RefreshToken[]
+  userIngredients    UserIngredient[]
 
   @@map("users")
 }
 
-// ==================================================================
-// CATEGORIES (danh mục nguyên liệu) - bảng SQL tên là "categories"
-// ==================================================================
 model Category {
-  ingredientCategoryId   String  @id @default(dbgenerated("gen_random_uuid()")) @map("ingredient_category_id") @db.Uuid
-  ingredientCategoryName String  @map("ingredient_category_name")
-  parentCategoryId       String? @map("parent_category_id") @db.Uuid
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  createdBy String   @map("created_by") @db.Uuid
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-  updatedBy String   @map("updated_by") @db.Uuid
-
-  parent   Category?  @relation("CategoryParent", fields: [parentCategoryId], references: [ingredientCategoryId])
-  children Category[] @relation("CategoryParent")
-
-  createdByUser User @relation("CategoryCreatedBy", fields: [createdBy], references: [userId])
-  updatedByUser User @relation("CategoryUpdatedBy", fields: [updatedBy], references: [userId])
-
-  ingredientLinks IngredientCategoryLink[]
+  categoryId       String                   @id @default(dbgenerated("gen_random_uuid()")) @map("category_id") @db.Uuid
+  categoryName     String                   @map("category_name")
+  parentCategoryId String?                  @map("parent_category_id") @db.Uuid
+  category_type    String?
+  createdAt        DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy        String                   @map("created_by") @db.Uuid
+  updatedAt        DateTime                 @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy        String                   @map("updated_by") @db.Uuid
+  createdByUser    User                     @relation("CategoryCreatedBy", fields: [createdBy], references: [userId], onDelete: NoAction, onUpdate: NoAction, map: "fk_created_by_users")
+  parent           Category?                @relation("CategoryParent", fields: [parentCategoryId], references: [categoryId], onDelete: NoAction, onUpdate: NoAction, map: "fk_parent_category")
+  children         Category[]               @relation("CategoryParent")
+  updatedByUser    User                     @relation("CategoryUpdatedBy", fields: [updatedBy], references: [userId], onDelete: NoAction, onUpdate: NoAction, map: "fk_updated_by_users")
+  ingredientLinks  IngredientCategoryLink[]
+  recipeCategories RecipeCategory[]
 
   @@index([parentCategoryId], map: "idx_categories_parent")
   @@map("categories")
 }
 
-// ==================================================================
-// INGREDIENTS
-// ==================================================================
 model Ingredient {
-  ingredientId   String @id @default(dbgenerated("gen_random_uuid()")) @map("ingredient_id") @db.Uuid
-  ingredientName String @map("ingredient_name")
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  createdBy String?  @map("created_by") @db.Uuid
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-  updatedBy String?  @map("updated_by") @db.Uuid
-
-  createdByUser User? @relation("IngredientCreatedBy", fields: [createdBy], references: [userId])
-  updatedByUser User? @relation("IngredientUpdatedBy", fields: [updatedBy], references: [userId])
-
+  ingredientId      String                   @id @default(dbgenerated("gen_random_uuid()")) @map("ingredient_id") @db.Uuid
+  ingredientName    String                   @map("ingredient_name")
+  createdAt         DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy         String?                  @map("created_by") @db.Uuid
+  updatedAt         DateTime                 @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy         String?                  @map("updated_by") @db.Uuid
   categoryLinks     IngredientCategoryLink[]
+  createdByUser     User?                    @relation("IngredientCreatedBy", fields: [createdBy], references: [userId], onDelete: NoAction, onUpdate: NoAction, map: "fk_ingredients_created_by_users")
+  updatedByUser     User?                    @relation("IngredientUpdatedBy", fields: [updatedBy], references: [userId], onDelete: NoAction, onUpdate: NoAction, map: "fk_ingredients_updated_by_users")
   recipeIngredients RecipeIngredient[]
   userIngredients   UserIngredient[]
 
@@ -87,175 +66,112 @@ model Ingredient {
   @@map("ingredients")
 }
 
-// ==================================================================
-// INGREDIENT_CATEGORY (bảng nối ingredient <-> category)
-// ==================================================================
 model IngredientCategoryLink {
-  ingredientId         String @map("ingredient_id") @db.Uuid
-  ingredientCategoryId String @map("ingredient_category_id") @db.Uuid
+  ingredientId String     @map("ingredient_id") @db.Uuid
+  categoryId   String     @map("category_id") @db.Uuid
+  category     Category   @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade, onUpdate: NoAction, map: "fk_ingredientcategory_category")
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [ingredientId], onDelete: Cascade, onUpdate: NoAction, map: "fk_ingredientcategory_ingredient")
 
-  ingredient Ingredient @relation(fields: [ingredientId], references: [ingredientId], onDelete: Cascade)
-  category   Category   @relation(fields: [ingredientCategoryId], references: [ingredientCategoryId], onDelete: Cascade)
-
-  @@id([ingredientId, ingredientCategoryId])
-  @@index([ingredientCategoryId], map: "idx_ingredient_category_category")
+  @@id([ingredientId, categoryId])
+  @@index([categoryId], map: "idx_ingredient_category")
   @@map("ingredient_category")
 }
 
-// ==================================================================
-// RECIPES
-// ==================================================================
 model Recipe {
-  recipeId          String  @id @default(dbgenerated("gen_random_uuid()")) @map("recipe_id") @db.Uuid
-  recipeName        String  @map("recipe_name")
-  recipeImage       String? @map("recipe_image")
-  recipeDescription String? @map("recipe_description")
-  cookTime          Int     @map("cook_time")
-  difficulty        String  @default("0") @db.Char(1)
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  createdBy String?  @map("created_by") @db.Uuid
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-  updatedBy String?  @map("updated_by") @db.Uuid
-
-  createdByUser User? @relation("RecipeCreatedBy", fields: [createdBy], references: [userId], onDelete: Cascade)
-  updatedByUser User? @relation("RecipeUpdatedBy", fields: [updatedBy], references: [userId], onDelete: Cascade)
-
-  steps            RecipeStep[]
-  ingredients      RecipeIngredient[]
-  recipeCategories RecipeRecipeCategory[]
+  recipeId          String             @id @default(dbgenerated("gen_random_uuid()")) @map("recipe_id") @db.Uuid
+  recipeName        String             @map("recipe_name")
+  recipeDescription String?            @map("recipe_description")
+  cookTime          Int             @map("cook_time")
+  khau_phan         String?
+  hinh_anh          String?
+  difficulty        String             @default("0") @db.Char(1)
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy         String?            @map("created_by") @db.Uuid
+  updatedAt         DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy         String?            @map("updated_by") @db.Uuid
+  recipeCategories  RecipeCategory[]
+  ingredients       RecipeIngredient[]
+  steps             RecipeStep[]
+  createdByUser     User?              @relation("RecipeCreatedBy", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipescreatedby_users")
+  updatedByUser     User?              @relation("RecipeUpdatedBy", fields: [updatedBy], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipesupdatedby_users")
 
   @@index([createdBy], map: "idx_recipes_created_by")
   @@index([updatedBy], map: "idx_recipes_updated_by")
   @@map("recipes")
 }
 
-// ==================================================================
-// UNITS
-// ==================================================================
 model Unit {
-  unitId String @id @default(dbgenerated("gen_random_uuid()")) @map("unit_id") @db.Uuid
-  unitName String @unique @map("unit_name")
-  symbol   String @unique
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  createdBy String   @map("created_by") @db.Uuid
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-  updatedBy String   @map("updated_by") @db.Uuid
-
+  unitId            String             @id @default(dbgenerated("gen_random_uuid()")) @map("unit_id") @db.Uuid
+  unitName          String             @unique(map: "uq_units_name") @map("unit_name")
+  symbol            String             @unique(map: "uq_units_symbol")
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy         String             @map("created_by") @db.Uuid
+  updatedAt         DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy         String             @map("updated_by") @db.Uuid
   recipeIngredients RecipeIngredient[]
   userIngredients   UserIngredient[]
 
   @@map("units")
 }
 
-// ==================================================================
-// RECIPE_INGREDIENTS
-// Lưu ý: cột "recipe_ingredient_id" trong SQL gốc thực chất là FK trỏ
-// tới recipes(recipe_id) (đặt tên hơi gây nhầm lẫn nhưng giữ nguyên).
-// ==================================================================
 model RecipeIngredient {
-  recipeIngredientId String  @map("recipe_ingredient_id") @db.Uuid // = recipe_id
-  ingredientId        String  @map("ingredient_id") @db.Uuid
-  quantity             Decimal
-  unitId               String? @map("unit_id") @db.Uuid
+  recipeId     String     @map("recipe_id") @db.Uuid
+  ingredientId String     @map("ingredient_id") @db.Uuid
+  quantity     Decimal    @db.Decimal
+  unitId       String?    @map("unit_id") @db.Uuid
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [ingredientId], onDelete: Cascade, onUpdate: NoAction, map: "fk_ingredient")
+  recipe       Recipe     @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe")
+  unit         Unit?      @relation(fields: [unitId], references: [unitId], onDelete: Restrict, onUpdate: NoAction, map: "fk_recipe_ingredients_unit")
 
-  recipe     Recipe     @relation(fields: [recipeIngredientId], references: [recipeId], onDelete: Cascade)
-  ingredient Ingredient @relation(fields: [ingredientId], references: [ingredientId], onDelete: Cascade)
-  unit       Unit?      @relation(fields: [unitId], references: [unitId], onDelete: Restrict)
-
-  @@id([recipeIngredientId, ingredientId])
+  @@id([recipeId, ingredientId])
   @@map("recipe_ingredients")
 }
 
-// ==================================================================
-// RECIPE_STEPS
-// ==================================================================
 model RecipeStep {
-  stepId      String @id @default(dbgenerated("gen_random_uuid()")) @map("step_id") @db.Uuid
+  stepId      String  @id @default(dbgenerated("gen_random_uuid()")) @map("step_id") @db.Uuid
   recipeId    String? @map("recipe_id") @db.Uuid
-  stepNumber  Int    @map("step_number")
+  stepNumber  Int  @map("step_number")
   description String
-
-  recipe Recipe? @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade)
+  recipe      Recipe? @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([recipeId, stepNumber])
   @@map("recipe_steps")
 }
 
-// ==================================================================
-// USER_INGREDIENTS (kho nguyên liệu cá nhân của user)
-// ==================================================================
 model UserIngredient {
-  userId       String   @map("user_id") @db.Uuid
-  ingredientId String   @map("ingredient_id") @db.Uuid
-  quantity     Decimal?
-  unitId       String?  @map("unit_id") @db.Uuid
-
-  user       User       @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  ingredient Ingredient @relation(fields: [ingredientId], references: [ingredientId], onDelete: Cascade)
-  unit       Unit?      @relation(fields: [unitId], references: [unitId], onDelete: Restrict)
+  userId       String     @map("user_id") @db.Uuid
+  ingredientId String     @map("ingredient_id") @db.Uuid
+  quantity     Decimal?   @db.Decimal
+  unitId       String?    @map("unit_id") @db.Uuid
+  unit         Unit?      @relation(fields: [unitId], references: [unitId], onDelete: Restrict, onUpdate: NoAction, map: "fk_user_ingredients_unit")
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [ingredientId], onDelete: Cascade, onUpdate: NoAction)
+  user         User       @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([userId, ingredientId])
   @@index([ingredientId], map: "idx_user_ingredients_ingredient")
   @@map("user_ingredients")
 }
 
-// ==================================================================
-// RECIPE_CATEGORIES
-// ==================================================================
 model RecipeCategory {
-  recipeCategoryId   String  @id @default(dbgenerated("gen_random_uuid()")) @map("recipe_category_id") @db.Uuid
-  recipeCategoryName String  @map("recipe_category_name")
-  parentCategoryId   String? @map("parent_category_id") @db.Uuid
+  recipeId   String   @map("recipe_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy  String   @map("created_by") @db.Uuid
+  category   Category @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe_categories_category")
+  recipe     Recipe   @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe_categories_recipe")
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  createdBy String   @map("created_by") @db.Uuid
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-  updatedBy String   @map("updated_by") @db.Uuid
-
-  parent   RecipeCategory?  @relation("RecipeCategoryParent", fields: [parentCategoryId], references: [recipeCategoryId], onDelete: SetNull)
-  children RecipeCategory[] @relation("RecipeCategoryParent")
-
-  recipeLinks RecipeRecipeCategory[]
-
-  @@unique([recipeCategoryName, parentCategoryId], map: "uq_recipe_category_name_parent")
-  @@index([parentCategoryId], map: "idx_recipe_categories_parent")
+  @@id([recipeId, categoryId])
   @@map("recipe_categories")
 }
 
-// ==================================================================
-// RECIPE_RECIPE_CATEGORIES (bảng nối recipe <-> recipe_category)
-// ==================================================================
-model RecipeRecipeCategory {
-  recipeId         String @map("recipe_id") @db.Uuid
-  recipeCategoryId String @map("recipe_category_id") @db.Uuid
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  createdBy String   @map("created_by") @db.Uuid
-
-  recipe   Recipe         @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade)
-  category RecipeCategory @relation(fields: [recipeCategoryId], references: [recipeCategoryId], onDelete: Cascade)
-
-  @@id([recipeId, recipeCategoryId])
-  @@index([recipeCategoryId], map: "idx_recipe_recipe_categories_category")
-  @@map("recipe_recipe_categories")
-}
-
-// ==================================================================
-// REFRESH_TOKENS
-// Bảng KHÔNG có trong script SQL gốc của bạn — được thêm vào để phục vụ
-// cơ chế refresh token JWT (xoay vòng, thu hồi). Cần tạo thêm bảng này
-// khi migrate (xem hướng dẫn trong README).
-// ==================================================================
 model RefreshToken {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   token     String   @unique
   userId    String   @map("user_id") @db.Uuid
-  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  expiresAt DateTime @map("expires_at") @db.Timestamptz
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   revoked   Boolean  @default(false)
+  users     User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "fk_refresh_tokens_user")
 
   @@map("refresh_tokens")
 }

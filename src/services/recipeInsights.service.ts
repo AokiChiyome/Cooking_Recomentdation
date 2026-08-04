@@ -62,7 +62,7 @@ export const recipeInsightsService = {
     const recipe = await findRecipeByName(recipeName);
 
     const rows = await prisma.recipeIngredient.findMany({
-      where: { recipeIngredientId: recipe.recipeId },
+      where: { recipeId: recipe.recipeId },
       include: { ingredient: true, unit: true },
     });
 
@@ -83,7 +83,10 @@ export const recipeInsightsService = {
   async cookableRecipes(userId: string) {
     const [recipes, userIngredients] = await Promise.all([
       getRecipesWithIngredientIds(),
-      prisma.userIngredient.findMany({ where: { userId }, select: { ingredientId: true } }),
+      prisma.userIngredient.findMany({
+        where: { userId },
+        select: { ingredientId: true },
+      }),
     ]);
 
     const ownedIds = new Set(userIngredients.map((ui: any) => ui.ingredientId));
@@ -92,7 +95,7 @@ export const recipeInsightsService = {
       .filter(
         (r: any) =>
           r.ingredients.length > 0 &&
-          r.ingredients.every((i: any) => ownedIds.has(i.ingredientId))
+          r.ingredients.every((i: any) => ownedIds.has(i.ingredientId)),
       )
       .map((r: any) => ({ recipeId: r.recipeId, recipeName: r.recipeName }));
   },
@@ -103,10 +106,13 @@ export const recipeInsightsService = {
 
     const [required, userIngredients] = await Promise.all([
       prisma.recipeIngredient.findMany({
-        where: { recipeIngredientId: recipe.recipeId },
+        where: { recipeId: recipe.recipeId },
         include: { ingredient: true },
       }),
-      prisma.userIngredient.findMany({ where: { userId }, select: { ingredientId: true } }),
+      prisma.userIngredient.findMany({
+        where: { userId },
+        select: { ingredientId: true },
+      }),
     ]);
 
     const ownedIds = new Set(userIngredients.map((ui: any) => ui.ingredientId));
@@ -114,14 +120,21 @@ export const recipeInsightsService = {
       .filter((ri: any) => !ownedIds.has(ri.ingredientId))
       .map((ri: any) => ri.ingredient.ingredientName);
 
-    return { recipeId: recipe.recipeId, recipeName: recipe.recipeName, missingIngredients };
+    return {
+      recipeId: recipe.recipeId,
+      recipeName: recipe.recipeName,
+      missingIngredients,
+    };
   },
 
   // 7. Tìm các món có thể nấu gần đủ (>= threshold% nguyên liệu có sẵn)
   async almostCookableRecipes(userId: string, thresholdPercent = 70) {
     const [recipes, userIngredients] = await Promise.all([
       getRecipesWithIngredientIds(),
-      prisma.userIngredient.findMany({ where: { userId }, select: { ingredientId: true } }),
+      prisma.userIngredient.findMany({
+        where: { userId },
+        select: { ingredientId: true },
+      }),
     ]);
 
     const ownedIds = new Set(userIngredients.map((ui: any) => ui.ingredientId));
@@ -129,7 +142,9 @@ export const recipeInsightsService = {
     return recipes
       .filter((r: any) => r.ingredients.length > 0)
       .map((r: any) => {
-        const haveCount = r.ingredients.filter((i: any) => ownedIds.has(i.ingredientId)).length;
+        const haveCount = r.ingredients.filter((i: any) =>
+          ownedIds.has(i.ingredientId),
+        ).length;
         const totalCount = r.ingredients.length;
         return {
           recipeId: r.recipeId,

@@ -2,7 +2,10 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { ApiError } from "../utils/ApiError";
 import { buildMeta, getPagination } from "../utils/pagination";
-import { CreateCategoryInput, UpdateCategoryInput } from "../validators/category.validator";
+import {
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from "../validators/category.validator";
 
 interface ListQuery {
   page?: number;
@@ -17,7 +20,7 @@ export const categoryService = {
 
     const where: Prisma.CategoryWhereInput = {
       ...(query.search && {
-        ingredientCategoryName: {
+        categoryName: {
           contains: query.search,
           mode: "insensitive",
         },
@@ -32,7 +35,7 @@ export const categoryService = {
         where,
         skip,
         take,
-        orderBy: { ingredientCategoryName: "asc" },
+        orderBy: { categoryName: "asc" },
         include: { parent: true },
       }),
       prisma.category.count({ where }),
@@ -43,10 +46,11 @@ export const categoryService = {
 
   async getById(id: string) {
     const category = await prisma.category.findUnique({
-      where: { ingredientCategoryId: id },
+      where: { categoryId: id },
       include: { parent: true, children: true },
     });
-    if (!category) throw ApiError.notFound("Không tìm thấy danh mục nguyên liệu");
+    if (!category)
+      throw ApiError.notFound("Không tìm thấy danh mục nguyên liệu");
     return category;
   },
 
@@ -58,7 +62,7 @@ export const categoryService = {
     return prisma.$transaction(async (tx) => {
       return tx.category.create({
         data: {
-          ingredientCategoryName: input.ingredientCategoryName,
+          categoryName: input.ingredientCategoryName,
           parentCategoryId: input.parentCategoryId ?? null,
           createdBy: userId,
           updatedBy: userId,
@@ -70,22 +74,24 @@ export const categoryService = {
   async update(id: string, input: UpdateCategoryInput, userId: string) {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.category.findUnique({
-        where: { ingredientCategoryId: id },
+        where: { categoryId: id },
       });
-      if (!existing) throw ApiError.notFound("Không tìm thấy danh mục nguyên liệu");
+      if (!existing)
+        throw ApiError.notFound("Không tìm thấy danh mục nguyên liệu");
 
       if (input.parentCategoryId) {
         if (input.parentCategoryId === id) {
           throw ApiError.badRequest("Danh mục không thể là cha của chính nó");
         }
         const parent = await tx.category.findUnique({
-          where: { ingredientCategoryId: input.parentCategoryId },
+          where: { categoryId: input.parentCategoryId },
         });
-        if (!parent) throw ApiError.badRequest("parentCategoryId không tồn tại");
+        if (!parent)
+          throw ApiError.badRequest("parentCategoryId không tồn tại");
       }
 
       return tx.category.update({
-        where: { ingredientCategoryId: id },
+        where: { categoryId: id },
         data: {
           ...(input.ingredientCategoryName !== undefined && {
             ingredientCategoryName: input.ingredientCategoryName,
@@ -103,24 +109,25 @@ export const categoryService = {
   async remove(id: string) {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.category.findUnique({
-        where: { ingredientCategoryId: id },
+        where: { categoryId: id },
         include: { children: true, ingredientLinks: true },
       });
-      if (!existing) throw ApiError.notFound("Không tìm thấy danh mục nguyên liệu");
+      if (!existing)
+        throw ApiError.notFound("Không tìm thấy danh mục nguyên liệu");
 
       if (existing.children.length > 0) {
         throw ApiError.badRequest(
-          "Không thể xoá danh mục đang có danh mục con, hãy xoá/di chuyển danh mục con trước"
+          "Không thể xoá danh mục đang có danh mục con, hãy xoá/di chuyển danh mục con trước",
         );
       }
 
       // ingredient_category có onDelete cascade nên record liên kết sẽ tự xoá,
       // xoá tường minh trong transaction để đảm bảo tính nhất quán/rõ ràng.
       await tx.ingredientCategoryLink.deleteMany({
-        where: { ingredientCategoryId: id },
+        where: { categoryId: id },
       });
 
-      await tx.category.delete({ where: { ingredientCategoryId: id } });
+      await tx.category.delete({ where: { categoryId: id } });
 
       return { id };
     });
@@ -128,7 +135,7 @@ export const categoryService = {
 
   async ensureExists(id: string) {
     const found = await prisma.category.findUnique({
-      where: { ingredientCategoryId: id },
+      where: { categoryId: id },
     });
     if (!found) throw ApiError.badRequest("parentCategoryId không tồn tại");
   },
