@@ -81,7 +81,7 @@ model Recipe {
   recipeId          String             @id @default(dbgenerated("gen_random_uuid()")) @map("recipe_id") @db.Uuid
   recipeName        String             @map("recipe_name")
   recipeDescription String?            @map("recipe_description")
-  cookTime          BigInt             @map("cook_time")
+  cookTime          Int             @map("cook_time")
   khau_phan         String?
   hinh_anh          String?
   difficulty        String             @default("0") @db.Char(1)
@@ -130,7 +130,7 @@ model RecipeIngredient {
 model RecipeStep {
   stepId      String  @id @default(dbgenerated("gen_random_uuid()")) @map("step_id") @db.Uuid
   recipeId    String? @map("recipe_id") @db.Uuid
-  stepNumber  BigInt  @map("step_number")
+  stepNumber  Int  @map("step_number")
   description String
   recipe      Recipe? @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade, onUpdate: NoAction)
 
