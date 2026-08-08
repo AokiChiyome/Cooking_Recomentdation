@@ -11,6 +11,7 @@ interface ListQuery {
   page?: number;
   limit?: number;
   search?: string;
+  ingredients?: string | string[];
   categoryId?: string;
   difficulty?: string;
   maxCookTime?: number;
@@ -78,9 +79,35 @@ export const recipeService = {
   async list(query: ListQuery) {
     const { skip, take, page, limit } = getPagination(query);
 
+    const ingList = query.ingredients
+      ? (Array.isArray(query.ingredients) ? query.ingredients : [query.ingredients]).filter((i) => i && i.trim())
+      : [];
+
     const where: Prisma.RecipeWhereInput = {
       ...(query.search && {
-        recipeName: { contains: query.search, mode: "insensitive" },
+        OR: [
+          { recipeName: { contains: query.search, mode: "insensitive" } },
+          {
+            ingredients: {
+              some: {
+                ingredient: {
+                  ingredientName: { contains: query.search, mode: "insensitive" },
+                },
+              },
+            },
+          },
+        ],
+      }),
+      ...(ingList.length > 0 && {
+        OR: ingList.map((ing) => ({
+          ingredients: {
+            some: {
+              ingredient: {
+                ingredientName: { contains: ing, mode: "insensitive" },
+              },
+            },
+          },
+        })),
       }),
       ...(query.difficulty && { difficulty: query.difficulty }),
       ...(query.maxCookTime && { cookTime: { lte: query.maxCookTime } }),
@@ -97,6 +124,7 @@ export const recipeService = {
         orderBy: { createdAt: "desc" },
         include: {
           recipeCategories: { include: { category: true } },
+          ingredients: { include: { ingredient: true, unit: true } },
         },
       }),
       prisma.recipe.count({ where }),
@@ -105,10 +133,17 @@ export const recipeService = {
     const formatted = items.map((r: any) => ({
       recipeId: r.recipeId,
       recipeName: r.recipeName,
-      recipeImage: r.recipeImage,
+      recipeImage: r.hinh_anh || r.recipeImage,
+      hinh_anh: r.hinh_anh,
       cookTime: r.cookTime,
       difficulty: r.difficulty,
-      categories: r.recipeCategories.map((rc: any) => rc.category),
+      categories: r.recipeCategories ? r.recipeCategories.map((rc: any) => rc.category) : [],
+      ingredients: r.ingredients ? r.ingredients.map((ri: any) => ({
+        ingredientId: ri.ingredientId,
+        ingredientName: ri.ingredient?.ingredientName,
+        quantity: ri.quantity,
+        unit: ri.unit,
+      })) : [],
       createdAt: r.createdAt,
     }));
 

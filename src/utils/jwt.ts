@@ -6,14 +6,16 @@ export interface JwtPayload {
   email: string;
 }
 
+import { randomUUID } from "crypto";
+
 export function signAccessToken(payload: JwtPayload): string {
-  return jwt.sign(payload, env.jwt.accessSecret, {
+  return jwt.sign({ ...payload, jti: randomUUID() }, env.jwt.accessSecret, {
     expiresIn: env.jwt.accessExpiresIn,
   } as SignOptions);
 }
 
 export function signRefreshToken(payload: JwtPayload): string {
-  return jwt.sign(payload, env.jwt.refreshSecret, {
+  return jwt.sign({ ...payload, jti: randomUUID() }, env.jwt.refreshSecret, {
     expiresIn: env.jwt.refreshExpiresIn,
   } as SignOptions);
 }
