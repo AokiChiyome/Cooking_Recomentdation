@@ -11,9 +11,11 @@
   --text-main: #0f172a;
   --text-muted: #64748b;
   --border: #e2e8f0;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-  --shadow-md: 0 10px 25px -5px rgba(249, 115, 22, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 20px 30px -10px rgba(0,0,0,0.08);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md:
+    0 10px 25px -5px rgba(249, 115, 22, 0.08),
+    0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 20px 30px -10px rgba(0, 0, 0, 0.08);
 }
 
 * {
@@ -23,7 +25,13 @@
 }
 
 body {
-  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    "Be Vietnam Pro",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   background-color: var(--bg);
   color: var(--text-main);
   line-height: 1.6;
@@ -31,10 +39,18 @@ body {
   padding-bottom: 4rem;
 }
 
-input, button, select, textarea {
-  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+input,
+button,
+select,
+textarea {
+  font-family:
+    "Be Vietnam Pro",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
 }
-
 
 /* Container */
 .container {
@@ -99,7 +115,8 @@ input, button, select, textarea {
   transition: color 0.2s ease;
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
   color: var(--primary);
 }
 
@@ -109,7 +126,7 @@ input, button, select, textarea {
   border-radius: 50%;
   background-color: var(--primary-light);
   border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
@@ -144,8 +161,12 @@ input, button, select, textarea {
 }
 
 @keyframes shimmer {
-  0% { background-position: 0% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: 0% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Floating emojis decoration */
@@ -155,17 +176,38 @@ input, button, select, textarea {
   user-select: none;
   pointer-events: none;
   opacity: 0.85;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.06));
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.06));
 }
 
-.food-1 { top: 12%; left: 4%; animation: float 6s ease-in-out infinite; }
-.food-2 { top: 18%; right: 5%; animation: float 7s ease-in-out 1s infinite; }
-.food-3 { bottom: 15%; left: 6%; animation: float 5.5s ease-in-out 0.5s infinite; }
-.food-4 { bottom: 20%; right: 6%; animation: float 6.5s ease-in-out 1.5s infinite; }
+.food-1 {
+  top: 12%;
+  left: 4%;
+  animation: float 6s ease-in-out infinite;
+}
+.food-2 {
+  top: 18%;
+  right: 5%;
+  animation: float 7s ease-in-out 1s infinite;
+}
+.food-3 {
+  bottom: 15%;
+  left: 6%;
+  animation: float 5.5s ease-in-out 0.5s infinite;
+}
+.food-4 {
+  bottom: 20%;
+  right: 6%;
+  animation: float 6.5s ease-in-out 1.5s infinite;
+}
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-12px) rotate(6deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(6deg);
+  }
 }
 
 .hero-badge {
@@ -245,13 +287,15 @@ input, button, select, textarea {
   border-radius: 3rem;
   height: 3.25rem;
   padding: 0 0.35rem 0 1.25rem;
-  box-shadow: 0 6px 16px -4px rgba(0,0,0,0.05);
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.05);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-pill:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15), 0 10px 20px -5px rgba(249, 115, 22, 0.12);
+  box-shadow:
+    0 0 0 4px rgba(249, 115, 22, 0.15),
+    0 10px 20px -5px rgba(249, 115, 22, 0.12);
 }
 
 .search-input {
@@ -260,7 +304,7 @@ input, button, select, textarea {
   border: none;
   outline: none;
   font-size: 0.95rem;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text-main);
   background: transparent;
 }
@@ -278,7 +322,7 @@ input, button, select, textarea {
   border-radius: 2rem;
   font-weight: 700;
   font-size: 0.88rem;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -300,8 +344,12 @@ input, button, select, textarea {
   margin-bottom: 1.2rem;
 }
 
-.btn-search-main {
-  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+.btn-search-main-home {
+  font-family:
+    "Be Vietnam Pro",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
   color: white;
   border: none;
@@ -320,18 +368,15 @@ input, button, select, textarea {
   gap: 0.6rem;
 }
 
-
-.btn-search-main:hover {
+.btn-search-main-home:hover {
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 14px 30px -4px rgba(249, 115, 22, 0.55);
   background: linear-gradient(135deg, #ea580c 0%, #f59e0b 100%);
 }
 
-.btn-search-main:active {
+.btn-search-main-home:active {
   transform: translateY(0) scale(0.98);
 }
-
-
 
 /* Quick Suggestions */
 .quick-suggestions {
@@ -447,13 +492,19 @@ input, button, select, textarea {
   border-radius: 0.85rem;
   font-size: 0.9rem;
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @keyframes popIn {
-  0% { transform: scale(0.85); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .btn-remove-tag {
@@ -513,7 +564,10 @@ input, button, select, textarea {
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .recipe-card:hover {
@@ -558,7 +612,7 @@ input, button, select, textarea {
   border-radius: 2rem;
   font-size: 0.82rem;
   font-weight: 800;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   gap: 0.3rem;
@@ -751,7 +805,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 }
 
 /* Modal View Recipe Details & Auth Modals */
-.modal-backdrop {
+.modal-backdrop-home {
   position: fixed;
   top: 0;
   left: 0;
@@ -769,15 +823,13 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   transition: opacity 0.2s ease;
 }
 
-.modal-backdrop.open {
+.modal-backdrop-home.open {
   display: flex;
   opacity: 1;
   pointer-events: auto;
 }
 
-
-
-.modal-card {
+.modal-card-home {
   background: white;
   border-radius: 1.5rem;
   max-width: 640px;
@@ -791,7 +843,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   transition: transform 0.25s ease;
 }
 
-.modal-backdrop.open .modal-card {
+.modal-backdrop-home.open .modal-card-home {
   transform: translateY(0);
 }
 
@@ -874,7 +926,9 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   padding: 0.9rem 1.2rem;
   border-radius: 1rem;
   background: white;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.18), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 30px -5px rgba(0, 0, 0, 0.18),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -882,7 +936,9 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   font-size: 0.92rem;
   color: var(--text-main);
   border: 1px solid var(--border);
-  animation: slideInRight 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), fadeOut 0.4s ease 3.1s forwards;
+  animation:
+    slideInRight 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    fadeOut 0.4s ease 3.1s forwards;
 }
 
 .toast.success {
@@ -898,15 +954,26 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(120%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-10px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
 }
-
 
 /* Auth Navbar User State & Buttons */
 .nav-auth-guest {
@@ -1035,7 +1102,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 }
 
 /* Auth Modals & Forms */
-.auth-modal-card {
+.auth-modal-card-home {
   max-width: 440px;
 }
 
@@ -1121,7 +1188,9 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
 }
 
 .btn-toggle-password:hover {
@@ -1132,7 +1201,6 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 .btn-toggle-password * {
   pointer-events: none;
 }
-
 
 .alert-danger {
   background-color: #fef2f2;
@@ -1266,4 +1334,3 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 .btn-danger:hover {
   background-color: #dc2626;
 }
-

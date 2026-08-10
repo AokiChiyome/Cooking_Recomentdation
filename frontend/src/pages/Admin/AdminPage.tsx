@@ -1,57 +1,79 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { fetchWithAuth } from '../services/api';
-import type { AdminStats, Recipe } from '../types';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { fetchWithAuth } from "../../services/api";
+import type { AdminStats, Recipe } from "../../types";
 
-
-import { ChefHat, Globe, LogOut, PlusCircle, Trash2, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-
+import {
+  ChefHat,
+  Clock,
+  Globe,
+  Leaf,
+  LogOut,
+  PlusCircle,
+  ShieldCheck,
+  Trash2,
+  Users,
+  UtensilsCrossed,
+  X,
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import "./admin.css";
 export const AdminPage: React.FC = () => {
-  const { currentUser, handleLogout, showToast } = useAuth();
+  const { currentUser, authLoading, handleLogout, showToast } = useAuth();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchQ, setSearchQ] = useState('');
+  const [searchQ, setSearchQ] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Modal Thêm món ăn state
   const [showAddModal, setShowAddModal] = useState(false);
-  const [recipeName, setRecipeName] = useState('');
+  const [recipeName, setRecipeName] = useState("");
   const [cookTime, setCookTime] = useState(30);
-  const [khauPhan, setKhauPhan] = useState('2 người');
-  const [recipeImage, setRecipeImage] = useState('');
-  const [recipeDesc, setRecipeDesc] = useState('');
-  const [rawIngredients, setRawIngredients] = useState('');
-  const [rawSteps, setRawSteps] = useState('');
+  const [khauPhan, setKhauPhan] = useState("2 người");
+  const [recipeImage, setRecipeImage] = useState("");
+  const [recipeDesc, setRecipeDesc] = useState("");
+  const [rawIngredients, setRawIngredients] = useState("");
+  const [rawSteps, setRawSteps] = useState("");
 
   // Security check: Redirect if not ADMIN
   useEffect(() => {
-    if (!currentUser || currentUser.role !== 'ADMIN') {
-      showToast('🔒 Bạn không có quyền Admin để truy cập trang này!', 'error');
-      navigate('/');
-    } else {
-      loadStats();
-      loadAdminRecipes(1, searchQ);
+    if (authLoading) {
+      return;
     }
-  }, [currentUser]);
+
+    console.log("user:", currentUser);
+
+    if (
+      !currentUser ||
+      !currentUser.role?.some((role) => role.roleName === "admin")
+    ) {
+      showToast("🔒 Bạn không có quyền Admin để truy cập trang này!", "error");
+
+      navigate("/");
+      return;
+    }
+
+    loadStats();
+    loadAdminRecipes(1, searchQ);
+  }, [currentUser, authLoading]);
 
   const loadStats = async () => {
     try {
-      const res = await fetchWithAuth('/api/admin/stats');
+      const res = await fetchWithAuth("/api/admin/stats");
       const json = await res.json();
       if (json.success && json.data) {
         setStats(json.data);
       }
     } catch (err) {
-      console.error('Load admin stats error:', err);
+      console.error("Load admin stats error:", err);
     }
   };
 
-  const loadAdminRecipes = async (p = 1, q = '') => {
+  const loadAdminRecipes = async (p = 1, q = "") => {
     setLoading(true);
     try {
       const url = `/api/admin/recipes?page=${p}&limit=10&q=${encodeURIComponent(q)}`;
@@ -64,30 +86,31 @@ export const AdminPage: React.FC = () => {
         setTotalPages(json.data.pagination.totalPages);
       }
     } catch (err) {
-      console.error('Load admin recipes error:', err);
+      console.error("Load admin recipes error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteRecipe = async (recipeId: string, name: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa món "${name}" khỏi CSDL?`)) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa món "${name}" khỏi CSDL?`))
+      return;
 
     try {
       const res = await fetchWithAuth(`/api/admin/recipes/${recipeId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       const json = await res.json();
 
       if (json.success) {
-        showToast(`🗑️ Đã xóa thành công món "${name}".`, 'success');
+        showToast(`🗑️ Đã xóa thành công món "${name}".`, "success");
         loadStats();
         loadAdminRecipes(page, searchQ);
       } else {
-        showToast(json.message || 'Không thể xóa món ăn', 'error');
+        showToast(json.message || "Không thể xóa món ăn", "error");
       }
     } catch (err) {
-      showToast('Lỗi máy chủ khi xóa món ăn', 'error');
+      showToast("Lỗi máy chủ khi xóa món ăn", "error");
     }
   };
 
@@ -95,13 +118,19 @@ export const AdminPage: React.FC = () => {
     e.preventDefault();
 
     const ingredients = rawIngredients
-      ? rawIngredients.split('\n').filter((l) => l.trim()).map((l) => {
-          const parts = l.split(':');
-          return { ingredientName: parts[0].trim(), amount: parts[1] ? parts[1].trim() : 'Vừa đủ' };
-        })
+      ? rawIngredients
+          .split("\n")
+          .filter((l) => l.trim())
+          .map((l) => {
+            const parts = l.split(":");
+            return {
+              ingredientName: parts[0].trim(),
+              amount: parts[1] ? parts[1].trim() : "Vừa đủ",
+            };
+          })
       : [];
 
-    const steps = rawSteps ? rawSteps.split('\n').filter((l) => l.trim()) : [];
+    const steps = rawSteps ? rawSteps.split("\n").filter((l) => l.trim()) : [];
 
     const bodyData = {
       recipeName,
@@ -114,27 +143,30 @@ export const AdminPage: React.FC = () => {
     };
 
     try {
-      const res = await fetchWithAuth('/api/admin/recipes', {
-        method: 'POST',
+      const res = await fetchWithAuth("/api/admin/recipes", {
+        method: "POST",
         body: JSON.stringify(bodyData),
       });
 
       const json = await res.json();
       if (json.success) {
-        showToast(`🎉 Thêm thành công món "${recipeName}" vào CSDL!`, 'success');
+        showToast(
+          `🎉 Thêm thành công món "${recipeName}" vào CSDL!`,
+          "success",
+        );
         setShowAddModal(false);
-        setRecipeName('');
-        setRecipeImage('');
-        setRecipeDesc('');
-        setRawIngredients('');
-        setRawSteps('');
+        setRecipeName("");
+        setRecipeImage("");
+        setRecipeDesc("");
+        setRawIngredients("");
+        setRawSteps("");
         loadStats();
         loadAdminRecipes(1, searchQ);
       } else {
-        showToast(json.message || 'Không thể thêm món ăn', 'error');
+        showToast(json.message || "Không thể thêm món ăn", "error");
       }
     } catch (err) {
-      showToast('Lỗi máy chủ khi thêm món ăn', 'error');
+      showToast("Lỗi máy chủ khi thêm món ăn", "error");
     }
   };
 
@@ -143,21 +175,25 @@ export const AdminPage: React.FC = () => {
       {/* Admin Navbar */}
       <header className="admin-navbar">
         <Link to="/admin" className="admin-brand">
-          <ChefHat size={28} />
+          <ChefHat size={26} />
           <span>SmartCook</span>
           <span className="admin-badge">Admin Panel</span>
         </Link>
+        <nav className="admin-nav-tabs">
+          <Link to="/admin" className="admin-nav-tab active">
+            Quản lý
+          </Link>
+          <Link to="/admin/dashboard" className="admin-nav-tab">
+            Thống kê
+          </Link>
+        </nav>
         <div className="admin-nav-actions">
           <Link to="/" className="btn-back-home">
-            <Globe size={18} />
+            <Globe size={16} />
             <span>Về Trang Chủ</span>
           </Link>
-          <button
-            className="btn btn-secondary"
-            style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem' }}
-            onClick={handleLogout}
-          >
-            <LogOut size={16} /> Đăng xuất
+          <button className="btn" onClick={handleLogout}>
+            <LogOut size={15} /> Đăng xuất
           </button>
         </div>
       </header>
@@ -167,31 +203,47 @@ export const AdminPage: React.FC = () => {
         {/* Stats Grid */}
         <div className="admin-stats-grid">
           <div className="stat-card">
-            <div className="stat-icon-wrapper stat-bg-orange">🍲</div>
+            <div className="stat-icon-wrapper stat-bg-orange">
+              <ChefHat size={20} />
+            </div>
             <div className="stat-info">
               <h4>Tổng Công Thức</h4>
-              <div className="stat-number">{stats ? stats.totalRecipes.toLocaleString('vi-VN') : '...'}</div>
+              <div className="stat-number">
+                {stats ? stats.totalRecipes.toLocaleString("vi-VN") : "..."}
+              </div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon-wrapper stat-bg-blue">👥</div>
+            <div className="stat-icon-wrapper stat-bg-blue">
+              <Users size={20} />
+            </div>
             <div className="stat-info">
               <h4>Tổng Người Dùng</h4>
-              <div className="stat-number">{stats ? stats.totalUsers.toLocaleString('vi-VN') : '...'}</div>
+              <div className="stat-number">
+                {stats ? stats.totalUsers.toLocaleString("vi-VN") : "..."}
+              </div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon-wrapper stat-bg-green">🥦</div>
+            <div className="stat-icon-wrapper stat-bg-green">
+              <Leaf size={20} />
+            </div>
             <div className="stat-info">
               <h4>Tổng Nguyên Liệu</h4>
-              <div className="stat-number">{stats ? stats.totalIngredients.toLocaleString('vi-VN') : '...'}</div>
+              <div className="stat-number">
+                {stats ? stats.totalIngredients.toLocaleString("vi-VN") : "..."}
+              </div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon-wrapper stat-bg-purple">🔒</div>
+            <div className="stat-icon-wrapper stat-bg-purple">
+              <ShieldCheck size={20} />
+            </div>
             <div className="stat-info">
               <h4>Bảo Mật Hệ Thống</h4>
-              <div className="stat-number" style={{ fontSize: '1.1rem', color: '#22c55e' }}>RBAC Admin Active</div>
+              <div className="stat-number" style={{ fontSize: "13px" }}>
+                RBAC Admin Active
+              </div>
             </div>
           </div>
         </div>
@@ -199,7 +251,7 @@ export const AdminPage: React.FC = () => {
         {/* Recipe Management Panel */}
         <section className="admin-panel-card">
           <div className="panel-header">
-            <h2 className="panel-title">Quản Lý Công Thức Món Ăn (Recipe List)</h2>
+            <h2 className="panel-title">Danh sách công thức món ăn</h2>
             <div className="admin-table-search">
               <input
                 type="text"
@@ -211,8 +263,11 @@ export const AdminPage: React.FC = () => {
                   loadAdminRecipes(1, e.target.value);
                 }}
               />
-              <button className="btn-create-recipe" onClick={() => setShowAddModal(true)}>
-                <PlusCircle size={18} />
+              <button
+                className="btn-create-recipe"
+                onClick={() => setShowAddModal(true)}
+              >
+                <PlusCircle size={16} />
                 <span>Thêm Món Mới</span>
               </button>
             </div>
@@ -234,13 +289,13 @@ export const AdminPage: React.FC = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
-                      ⏳ Đang tải danh sách công thức...
+                    <td colSpan={6} className="table-empty-row">
+                      Đang tải danh sách công thức...
                     </td>
                   </tr>
                 ) : recipes.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+                    <td colSpan={6} className="table-empty-row">
                       Không tìm thấy công thức món ăn nào.
                     </td>
                   </tr>
@@ -249,22 +304,46 @@ export const AdminPage: React.FC = () => {
                     <tr key={recipe.recipeId}>
                       <td>
                         <img
-                          src={recipe.recipeImage || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100'}
+                          src={
+                            recipe.recipeImage ||
+                            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100"
+                          }
                           className="recipe-thumb"
                           alt={recipe.recipeName}
                         />
                       </td>
                       <td>
                         <strong>{recipe.recipeName}</strong>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>ID: {recipe.recipeId}</div>
+                        <div className="recipe-id-caption">
+                          ID: {recipe.recipeId}
+                        </div>
                       </td>
-                      <td>⏱️ {recipe.cookTime || 15} phút</td>
-                      <td>🍽️ {recipe.khauPhan || '2 người'}</td>
-                      <td>🥦 {(recipe.ingredients || []).length} nguyên liệu</td>
+                      <td>
+                        <span className="table-inline-icon">
+                          <Clock size={13} /> {recipe.cookTime || 15} phút
+                        </span>
+                      </td>
+                      <td>
+                        <span className="table-inline-icon">
+                          <UtensilsCrossed size={13} />{" "}
+                          {recipe.khauPhan || "2 người"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="table-inline-icon">
+                          <Leaf size={13} />{" "}
+                          {(recipe.ingredients || []).length} nguyên liệu
+                        </span>
+                      </td>
                       <td>
                         <button
                           className="btn-action btn-action-delete"
-                          onClick={() => handleDeleteRecipe(recipe.recipeId, recipe.recipeName)}
+                          onClick={() =>
+                            handleDeleteRecipe(
+                              recipe.recipeId,
+                              recipe.recipeName,
+                            )
+                          }
                         >
                           <Trash2 size={14} /> Xóa
                         </button>
@@ -278,17 +357,23 @@ export const AdminPage: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.5rem' }}>
+            <div className="admin-pagination">
               {page > 1 && (
-                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem' }} onClick={() => loadAdminRecipes(page - 1, searchQ)}>
+                <button
+                  className="btn-secondary"
+                  onClick={() => loadAdminRecipes(page - 1, searchQ)}
+                >
                   ◀ Trang trước
                 </button>
               )}
-              <span style={{ alignSelf: 'center', fontSize: '0.88rem', fontWeight: 700, color: '#475569' }}>
+              <span className="admin-pagination-label">
                 Trang {page} / {totalPages}
               </span>
               {page < totalPages && (
-                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem' }} onClick={() => loadAdminRecipes(page + 1, searchQ)}>
+                <button
+                  className="btn-secondary"
+                  onClick={() => loadAdminRecipes(page + 1, searchQ)}
+                >
                   Trang sau ▶
                 </button>
               )}
@@ -299,15 +384,28 @@ export const AdminPage: React.FC = () => {
 
       {/* Modal Thêm món ăn mới */}
       {showAddModal && (
-        <div className="modal-backdrop open" style={{ display: 'flex' }} onClick={() => setShowAddModal(false)}>
-          <div className="modal-card auth-modal-card" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
-            <button className="btn-close-modal" onClick={() => setShowAddModal(false)}>
+        <div
+          className="modal-backdrop open"
+          style={{ display: "flex" }}
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            className="modal-card auth-modal-card"
+            style={{ maxWidth: "600px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="btn-close-modal"
+              onClick={() => setShowAddModal(false)}
+            >
               <X size={20} />
             </button>
 
             <div className="auth-modal-header">
               <h3 className="auth-modal-title">Thêm Món Ăn Mới</h3>
-              <p className="auth-modal-subtitle">Điền thông tin công thức mới vào CSDL SmartCook</p>
+              <p className="auth-modal-subtitle">
+                Điền thông tin công thức mới vào CSDL SmartCook
+              </p>
             </div>
 
             <form className="form-auth" onSubmit={handleCreateRecipeSubmit}>
@@ -367,7 +465,9 @@ export const AdminPage: React.FC = () => {
               </div>
 
               <div className="auth-field-group">
-                <label className="auth-label">Nguyên liệu (Mỗi dòng một nguyên liệu, VD: Thịt bò: 300g)</label>
+                <label className="auth-label">
+                  Nguyên liệu (Mỗi dòng một nguyên liệu, VD: Thịt bò: 300g)
+                </label>
                 <textarea
                   className="input-auth-field"
                   rows={3}
@@ -377,7 +477,9 @@ export const AdminPage: React.FC = () => {
               </div>
 
               <div className="auth-field-group">
-                <label className="auth-label">Các bước thực hiện (Mỗi dòng một bước)</label>
+                <label className="auth-label">
+                  Các bước thực hiện (Mỗi dòng một bước)
+                </label>
                 <textarea
                   className="input-auth-field"
                   rows={3}
@@ -386,7 +488,7 @@ export const AdminPage: React.FC = () => {
                 />
               </div>
 
-              <button type="submit" className="btn btn-search-main" style={{ width: '100%', marginTop: '0.5rem' }}>
+              <button type="submit" className="btn-search-main">
                 💾 Lưu Công Thức Món Ăn
               </button>
             </form>

@@ -28,20 +28,54 @@ function msFromExpiresIn(expiresIn: string): number {
 }
 
 export const authService = {
+  // async register(input: RegisterInput) {
+  //   const existing = await prisma.user.findUnique({
+  //     where: { email: input.email },
+  //   });
+  //   if (existing) {
+  //     throw ApiError.conflict("Email đã được đăng ký");
+  //   }
+
+  //   const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+
+  //   const newUserId = randomUUID();
+
+  //   const user = await prisma.user.create({
+  //     data: {
+  //       userId: newUserId,
+  //       email: input.email,
+  //       firstName: input.firstName,
+  //       lastName: input.lastName,
+  //       password: passwordHash,
+  //       createdBy: newUserId,
+  //       updatedBy: newUserId,
+  //     },
+  //   });
+
+  //   return authService.issueTokens(user.userId, user.email);
+  // },
   async register(input: RegisterInput) {
     const existing = await prisma.user.findUnique({
       where: { email: input.email },
     });
+
     if (existing) {
       throw ApiError.conflict("Email đã được đăng ký");
     }
 
     const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
 
-    // Bảng "users" có created_by/updated_by NOT NULL nhưng không có FK
-    // ràng buộc lên chính nó, nên ta tự sinh UUID trước và cho user
-    // tự tham chiếu chính mình (self-reference) khi tạo.
     const newUserId = randomUUID();
+
+    const role = await prisma.role.findUnique({
+      where: {
+        roleName: "user",
+      },
+    });
+
+    if (!role) {
+      throw ApiError.internal("Role USER không tồn tại");
+    }
 
     const user = await prisma.user.create({
       data: {
@@ -52,6 +86,12 @@ export const authService = {
         password: passwordHash,
         createdBy: newUserId,
         updatedBy: newUserId,
+
+        role: {
+          connect: {
+            roleId: role.roleId,
+          },
+        },
       },
     });
 
@@ -80,7 +120,7 @@ export const authService = {
     const refreshToken = signRefreshToken(payload);
 
     const expiresAt = new Date(
-      Date.now() + msFromExpiresIn(env.jwt.refreshExpiresIn)
+      Date.now() + msFromExpiresIn(env.jwt.refreshExpiresIn),
     );
 
     await prisma.refreshToken.create({
@@ -139,9 +179,20 @@ export const authService = {
         firstName: true,
         lastName: true,
         createdAt: true,
+
+        role: {
+          select: {
+            roleId: true,
+            roleName: true,
+          },
+        },
       },
     });
-    if (!user) throw ApiError.notFound("Không tìm thấy người dùng");
+
+    if (!user) {
+      throw ApiError.notFound("Không tìm thấy người dùng");
+    }
+
     return user;
   },
 };
