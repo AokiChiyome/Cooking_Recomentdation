@@ -113,7 +113,6 @@ export const recipeCategoryService = {
       data: {
         recipeId,
         categoryId,
-        createdBy: userId,
       },
     });
   },
@@ -166,7 +165,6 @@ export const recipeCategoryService = {
         data: {
           recipeId,
           categoryId: newCategoryId,
-          createdBy: userId,
         },
       });
     });

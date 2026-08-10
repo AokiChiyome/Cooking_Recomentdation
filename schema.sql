@@ -1,5 +1,9 @@
-drop table if exists
-    recipe_recipe_categories,
+-- ================================================================
+-- DROP TABLE
+-- ================================================================
+
+DROP TABLE IF EXISTS
+    _UserRoles,
     recipe_categories,
     recipe_ingredients,
     recipe_steps,
@@ -9,227 +13,355 @@ drop table if exists
     categories,
     units,
     recipes,
-    users,
-    refresh_tokens 
-cascade;
+    refresh_tokens,
+    "Role",
+    users
+CASCADE;
 
-create table users (
-    user_id UUID primary key default gen_random_uuid(),
 
-    first_name string not null,
-    last_name string,
-    email string not null unique,
-    password string not null,
+-- ================================================================
+-- USERS
+-- ================================================================
 
-    created_at timestamptz not null default now(),
-    created_by UUID not null,
-    updated_at timestamptz not null default now(),
-    updated_by UUID not null
-);
--- ==================================================================
-create table categories (
-	category_id UUID primary key default gen_random_uuid(),
-	category_name string not null,
-	parent_category_id UUID,
-	category_type STRING,
-	
-	created_at timestamptz not null default now(),
-    created_by UUID not null,
-    updated_at timestamptz not null default now(),
-    updated_by UUID not null
+CREATE TABLE users (
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    first_name STRING NOT NULL,
+    last_name STRING,
+    email STRING NOT NULL UNIQUE,
+    password STRING NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by UUID NOT NULL
 );
 
-alter table categories 
-add constraint fk_parent_category
-foreign key (parent_category_id)
-references categories(category_id);
 
-alter table categories 
-add constraint fk_created_by_users
-foreign key (created_by)
-references users(user_id);
+-- ================================================================
+-- ROLE
+-- ================================================================
 
-alter table categories 
-add constraint fk_updated_by_users
-foreign key (updated_by)
-references users(user_id);
--- ==================================================================
-create table ingredients (
-	ingredient_id UUID primary key default gen_random_uuid(),
-	ingredient_name string not null,
-	
-	
-	created_at timestamptz not null default now(),
-    created_by UUID,
-    updated_at timestamptz not null default now(),
-    updated_by UUID
+CREATE TABLE "Role" (
+    role_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    role_name STRING NOT NULL UNIQUE,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by UUID NOT NULL
 );
 
-alter table ingredients  
-add constraint fk_ingredients_created_by_users
-foreign key (created_by)
-references users(user_id);
 
-alter table ingredients 
-add constraint fk_ingredients_updated_by_users
-foreign key (updated_by)
-references users(user_id);
--- ==================================================================
-create table ingredient_category (
-	ingredient_id UUID not null,
-    category_id UUID not null,
-    
-    primary key (ingredient_id,
-category_id),
-    
-    constraint fk_ingredientCategory_ingredient 
-        foreign key (ingredient_id) 
-        references ingredients(ingredient_id) 
-        on
-delete
-    cascade,
-    constraint fk_ingredient_categories
-        foreign key (category_id) 
-        references categories(category_id) 
-        on
-    delete
-        cascade
+-- ================================================================
+-- USER <-> ROLE
+-- Prisma implicit many-to-many table
+-- ================================================================
+
+CREATE TABLE "_UserRoles" (
+    "A" UUID NOT NULL,
+    "B" UUID NOT NULL,
+
+    PRIMARY KEY ("A", "B"),
+
+    CONSTRAINT "_UserRoles_A_fkey"
+        FOREIGN KEY ("A")
+        REFERENCES "Role"(role_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT "_UserRoles_B_fkey"
+        FOREIGN KEY ("B")
+        REFERENCES users(user_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
--- ==================================================================
-create table recipes (
-    recipe_id UUID primary key default gen_random_uuid(),
-    recipe_name string not null,
-    recipe_description string,
-    cook_time INT not null,
+
+CREATE INDEX "_UserRoles_B_index"
+ON "_UserRoles"("B");
+
+
+-- ================================================================
+-- CATEGORIES
+-- ================================================================
+
+CREATE TABLE categories (
+    category_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    category_name STRING NOT NULL,
+    parent_category_id UUID,
+    category_type STRING,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by UUID NOT NULL
+);
+
+ALTER TABLE categories
+ADD CONSTRAINT fk_parent_category
+FOREIGN KEY (parent_category_id)
+REFERENCES categories(category_id);
+
+ALTER TABLE categories
+ADD CONSTRAINT fk_created_by_users
+FOREIGN KEY (created_by)
+REFERENCES users(user_id);
+
+ALTER TABLE categories
+ADD CONSTRAINT fk_updated_by_users
+FOREIGN KEY (updated_by)
+REFERENCES users(user_id);
+
+
+-- ================================================================
+-- INGREDIENTS
+-- ================================================================
+
+CREATE TABLE ingredients (
+    ingredient_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    ingredient_name STRING NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by UUID NOT NULL
+);
+
+ALTER TABLE ingredients
+ADD CONSTRAINT fk_ingredients_created_by_users
+FOREIGN KEY (created_by)
+REFERENCES users(user_id);
+
+ALTER TABLE ingredients
+ADD CONSTRAINT fk_ingredients_updated_by_users
+FOREIGN KEY (updated_by)
+REFERENCES users(user_id);
+
+
+-- ================================================================
+-- INGREDIENT CATEGORY
+-- ================================================================
+
+CREATE TABLE ingredient_category (
+    ingredient_id UUID NOT NULL,
+    category_id UUID NOT NULL,
+
+    PRIMARY KEY (
+        ingredient_id,
+        category_id
+    ),
+
+    CONSTRAINT fk_ingredientCategory_ingredient
+        FOREIGN KEY (ingredient_id)
+        REFERENCES ingredients(ingredient_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_ingredient_categories
+        FOREIGN KEY (category_id)
+        REFERENCES categories(category_id)
+        ON DELETE CASCADE
+);
+
+
+-- ================================================================
+-- RECIPES
+-- ================================================================
+
+CREATE TABLE recipes (
+    recipe_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    recipe_name STRING NOT NULL,
+    recipe_description STRING,
+
+    cook_time INT NOT NULL,
+
     khau_phan STRING,
     hinh_anh STRING,
-    difficulty CHAR(1) not null default '0',
 
-    created_at timestamptz not null default now(),
+    difficulty CHAR(1) NOT NULL DEFAULT '0',
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_by UUID,
-    updated_at timestamptz not null default now(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_by UUID,
 
-    constraint fk_recipesCreatedBy_users
-        foreign key (created_by)
-        references users(user_id)
-        on
-delete
-    cascade,
-    constraint fk_recipesUpdatedBy_users
-        foreign key (updated_by)
-        references users(user_id)
-        on
-    delete
-        cascade
-);
--- ===
-create table units (
-    unit_id UUID primary key default gen_random_uuid(),
-
-    unit_name string not null,
-    symbol string not null,
-
-    created_at timestamptz not null default now(),
-    created_by UUID not null,
-
-    updated_at timestamptz not null default now(),
-    updated_by UUID not null,
-
-    constraint uq_units_name unique (unit_name),
-    constraint uq_units_symbol unique (symbol)
-);
--- ==================================================================
-create table recipe_ingredients (
-    recipe_id UUID not null,
-    ingredient_id UUID not null,
-    
-    quantity DECIMAL not null,
-    unit_id UUID,
-
-constraint fk_recipe_ingredients_unit
-    foreign key (unit_id)
-    references units(unit_id)
-    on
-delete
-    restrict,
-    primary key (recipe_id,
-    ingredient_id),
-    constraint fk_recipe
-        foreign key (recipe_id)
-        references recipes(recipe_id)
-        on
-    delete
-        cascade,
-        constraint fk_ingredient
-        foreign key (ingredient_id)
-        references ingredients(ingredient_id)
-        on
-        delete
-            cascade
-);
--- ==================================================================
-create table recipe_steps (
-    step_id UUID primary key default gen_random_uuid(),
-    recipe_id UUID references recipes(recipe_id) on
-delete
-    cascade,
-    step_number INT not null,
-    description TEXT not null,
-    unique (recipe_id,
-    step_number)
-);
--- ==================================================================
-CREATE TABLE user_ingredients (
-    user_id UUID NOT NULL
+    CONSTRAINT fk_recipesCreatedBy_users
+        FOREIGN KEY (created_by)
         REFERENCES users(user_id)
         ON DELETE CASCADE,
 
-    ingredient_id UUID NOT NULL
+    CONSTRAINT fk_recipesUpdatedBy_users
+        FOREIGN KEY (updated_by)
+        REFERENCES users(user_id)
+        ON DELETE CASCADE
+);
+
+
+-- ================================================================
+-- UNITS
+-- ================================================================
+
+CREATE TABLE units (
+    unit_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    unit_name STRING NOT NULL,
+    symbol STRING NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by UUID NOT NULL,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by UUID NOT NULL,
+
+    CONSTRAINT uq_units_name
+        UNIQUE (unit_name),
+
+    CONSTRAINT uq_units_symbol
+        UNIQUE (symbol)
+);
+
+
+-- ================================================================
+-- RECIPE INGREDIENTS
+-- ================================================================
+
+CREATE TABLE recipe_ingredients (
+    recipe_id UUID NOT NULL,
+    ingredient_id UUID NOT NULL,
+
+    quantity DECIMAL NOT NULL,
+
+    unit_id UUID,
+
+    PRIMARY KEY (
+        recipe_id,
+        ingredient_id
+    ),
+
+    CONSTRAINT fk_recipe
+        FOREIGN KEY (recipe_id)
+        REFERENCES recipes(recipe_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_ingredient
+        FOREIGN KEY (ingredient_id)
         REFERENCES ingredients(ingredient_id)
         ON DELETE CASCADE,
+
+    CONSTRAINT fk_recipe_ingredients_unit
+        FOREIGN KEY (unit_id)
+        REFERENCES units(unit_id)
+        ON DELETE RESTRICT
+);
+
+
+-- ================================================================
+-- RECIPE STEPS
+-- ================================================================
+
+CREATE TABLE recipe_steps (
+    step_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    recipe_id UUID,
+
+    step_number INT NOT NULL,
+    description STRING NOT NULL,
+
+    CONSTRAINT recipe_steps_recipe_id_fkey
+        FOREIGN KEY (recipe_id)
+        REFERENCES recipes(recipe_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT recipe_steps_recipe_id_step_number_key
+        UNIQUE (
+            recipe_id,
+            step_number
+        )
+);
+
+
+-- ================================================================
+-- USER INGREDIENTS
+-- ================================================================
+
+CREATE TABLE user_ingredients (
+    user_id UUID NOT NULL,
+    ingredient_id UUID NOT NULL,
 
     quantity DECIMAL,
 
     unit_id UUID,
 
-    PRIMARY KEY (user_id, ingredient_id),
+    PRIMARY KEY (
+        user_id,
+        ingredient_id
+    ),
+
+    CONSTRAINT user_ingredients_user_id_fkey
+        FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT user_ingredients_ingredient_id_fkey
+        FOREIGN KEY (ingredient_id)
+        REFERENCES ingredients(ingredient_id)
+        ON DELETE CASCADE,
 
     CONSTRAINT fk_user_ingredients_unit
         FOREIGN KEY (unit_id)
         REFERENCES units(unit_id)
         ON DELETE RESTRICT
 );
--- ==================================================================
-create table recipe_categories (
-    recipe_id UUID not null,
-    category_id UUID not null,
 
-    created_at timestamptz not null default now(),
-    created_by UUID not null,
 
-    primary key (recipe_id,category_id),
+-- ================================================================
+-- RECIPE CATEGORIES
+-- ================================================================
 
-    constraint fk_recipe_categories_recipe
-        foreign key (recipe_id)
-        references recipes(recipe_id)
-        on
-delete
-    cascade,
-    constraint fk_recipe_categories_category
-        foreign key (category_id)
-        references categories(category_id)
-        on
-    delete
-        cascade
+CREATE TABLE recipe_categories (
+    recipe_id UUID NOT NULL,
+    category_id UUID NOT NULL,
+
+    PRIMARY KEY (
+        recipe_id,
+        category_id
+    ),
+
+    CONSTRAINT fk_recipe_categories_recipe
+        FOREIGN KEY (recipe_id)
+        REFERENCES recipes(recipe_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_recipe_categories_category
+        FOREIGN KEY (category_id)
+        REFERENCES categories(category_id)
+        ON DELETE CASCADE
 );
--- ===
+
+
+-- ================================================================
+-- REFRESH TOKENS
+-- ================================================================
+
 CREATE TABLE refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
     token STRING NOT NULL UNIQUE,
+
     user_id UUID NOT NULL,
+
     expires_at TIMESTAMPTZ NOT NULL,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
     revoked BOOL NOT NULL DEFAULT false,
 
     CONSTRAINT fk_refresh_tokens_user
@@ -237,31 +369,39 @@ CREATE TABLE refresh_tokens (
         REFERENCES users(user_id)
         ON DELETE CASCADE
 );
--- ===
-create index idx_ingredients_created_by
-    on
-ingredients(created_by);
 
-create index idx_ingredients_updated_by
-    on
-ingredients(updated_by);
 
-create index idx_recipes_created_by
-    on
-recipes(created_by);
+-- ================================================================
+-- INDEXES
+-- ================================================================
 
-create index idx_recipes_updated_by
-    on
-recipes(updated_by);
+CREATE INDEX idx_categories_parent
+ON categories(parent_category_id);
 
-create index idx_ingredient_category
-    on
-ingredient_category(category_id);
 
-create index idx_user_ingredients_ingredient
-    on
-user_ingredients(ingredient_id);
+CREATE INDEX idx_ingredients_created_by
+ON ingredients(created_by);
 
-create index idx_categories_parent
-    on
-categories(parent_category_id);
+
+CREATE INDEX idx_ingredients_updated_by
+ON ingredients(updated_by);
+
+
+CREATE INDEX idx_ingredient_category
+ON ingredient_category(category_id);
+
+
+CREATE INDEX idx_recipes_created_by
+ON recipes(created_by);
+
+
+CREATE INDEX idx_recipes_updated_by
+ON recipes(updated_by);
+
+
+CREATE INDEX idx_user_ingredients_ingredient
+ON user_ingredients(ingredient_id);
+
+
+CREATE INDEX "_UserRoles_B_index"
+ON "_UserRoles"("B");

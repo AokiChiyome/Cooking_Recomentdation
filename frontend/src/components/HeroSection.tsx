@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Sparkles, Search, Utensils, Dices, Plus } from 'lucide-react';
+import React, { useState } from "react";
+import { Sparkles, Search, Utensils, Dices, Plus } from "lucide-react";
 
 interface HeroSectionProps {
   searchQuery: string;
@@ -10,8 +10,16 @@ interface HeroSectionProps {
 }
 
 const SUGGESTED_INGREDIENTS = [
-  'thịt bò', 'thịt heo', 'thịt gà', 'trứng',
-  'cà chua', 'hành tây', 'tỏi', 'khoai tây', 'rau muống', 'tôm'
+  "thịt bò",
+  "thịt heo",
+  "thịt gà",
+  "trứng",
+  "cà chua",
+  "hành tây",
+  "tỏi",
+  "khoai tây",
+  "rau muống",
+  "tôm",
 ];
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -21,12 +29,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onTriggerSearch,
   onSuggestRandom,
 }) => {
-  const [ingInput, setIngInput] = useState('');
+  const [ingInput, setIngInput] = useState("");
 
   const handleAdd = () => {
     if (ingInput.trim()) {
       onAddIngredient(ingInput.trim());
-      setIngInput('');
+      setIngInput("");
     }
   };
 
@@ -48,7 +56,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         Hôm nay <span>nấu gì?</span>
       </h1>
       <p className="hero-subtitle">
-        Nhập tên món ăn bạn thèm hoặc danh sách nguyên liệu đang có trong tủ lạnh, chúng tôi sẽ gợi ý ngay món ăn phù hợp nhất!
+        Nhập tên món ăn bạn thèm hoặc danh sách nguyên liệu đang có trong tủ
+        lạnh, chúng tôi sẽ gợi ý ngay món ăn phù hợp nhất!
       </p>
 
       {/* Dual Search Wrapper */}
@@ -57,7 +66,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {/* Box 1: Search by Recipe Name */}
           <div className="search-box-item">
             <label htmlFor="recipeNameInput" className="search-box-label">
-              <Search size={16} style={{ color: 'var(--primary)' }} />
+              <Search size={16} style={{ color: "var(--primary)" }} />
               Tên món ăn muốn nấu
             </label>
             <div className="search-pill">
@@ -68,7 +77,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 placeholder="VD: Phở bò, Sườn xào chua ngọt..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && onTriggerSearch()}
+                onKeyDown={(e) => e.key === "Enter" && onTriggerSearch()}
               />
             </div>
           </div>
@@ -76,7 +85,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {/* Box 2: Search by Fridge Ingredients */}
           <div className="search-box-item">
             <label htmlFor="ingredientInput" className="search-box-label">
-              <Utensils size={16} style={{ color: 'var(--accent)' }} />
+              <Utensils size={16} style={{ color: "var(--accent)" }} />
               Nguyên liệu có sẵn trong tủ lạnh
             </label>
             <div className="search-pill">
@@ -88,7 +97,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 value={ingInput}
                 onChange={(e) => setIngInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAdd();
+                  if (e.key === "Enter") handleAdd();
                 }}
               />
               <button className="btn-add" onClick={handleAdd}>
@@ -100,7 +109,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Hero Actions Button */}
         <div className="hero-actions">
-          <button className="btn-search-main" onClick={onTriggerSearch}>
+          <button className="btn-search-main-home" onClick={onTriggerSearch}>
             <Search size={20} /> TÌM MÓN ĂN PHÙ HỢP
           </button>
         </div>

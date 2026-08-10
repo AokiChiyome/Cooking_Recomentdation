@@ -3,8 +3,13 @@ export interface User {
   email: string;
   firstName: string;
   lastName?: string;
-  role: 'USER' | 'ADMIN';
+  role: Role[];
   createdAt?: string;
+}
+
+export interface Role {
+  roleId: string;
+  roleName: string;
 }
 
 export interface IngredientUnit {
@@ -54,7 +59,6 @@ export interface Pagination {
   totalPages: number;
   hasMore: boolean;
 }
-
 
 export interface SearchRecipeResponse {
   pagination: Pagination;

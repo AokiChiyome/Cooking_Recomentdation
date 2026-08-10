@@ -1,10 +1,11 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { ToastContainer } from './components/ToastContainer';
-import { AuthModals } from './components/AuthModals';
-import { HomePage } from './pages/HomePage';
-import { AdminPage } from './pages/AdminPage';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ToastContainer } from "./components/ToastContainer";
+import { AuthModals } from "./components/AuthModals";
+import { HomePage } from "./pages/Home/HomePage";
+import { AdminPage } from "./pages/Admin/AdminPage";
+import { DashboardPage } from "./pages/Admin/DashboardPage";
 
 export const App: React.FC = () => {
   return (
@@ -14,7 +15,10 @@ export const App: React.FC = () => {
         <AuthModals />
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="admin">
+            <Route index element={<AdminPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+          </Route>
         </Routes>
       </Router>
     </AuthProvider>

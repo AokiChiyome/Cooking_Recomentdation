@@ -1,30 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { Navbar } from '../components/Navbar';
-import { HeroSection } from '../components/HeroSection';
-import { FridgeSection } from '../components/FridgeSection';
-import { RecipeCard } from '../components/RecipeCard';
-import { RecipeDetailModal } from '../components/RecipeDetailModal';
-import type { Recipe, SearchRecipeResponse } from '../types';
-import { fetchWithAuth } from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Navbar } from "../../components/Navbar";
+import { HeroSection } from "../../components/HeroSection";
+import { FridgeSection } from "../../components/FridgeSection";
+import { RecipeCard } from "../../components/RecipeCard";
+import { RecipeDetailModal } from "../../components/recipeDetailModal/RecipeDetailModal";
+import type { Recipe, SearchRecipeResponse } from "../../types";
+import { fetchWithAuth } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import { RefreshCw } from "lucide-react";
 
 const SUGGESTED_INGREDIENTS = [
-  'thịt bò', 'thịt heo', 'thịt gà', 'trứng',
-  'cà chua', 'hành tây', 'tỏi', 'khoai tây', 'rau muống', 'tôm'
+  "thịt bò",
+  "thịt heo",
+  "thịt gà",
+  "trứng",
+  "cà chua",
+  "hành tây",
+  "tỏi",
+  "khoai tây",
+  "rau muống",
+  "tôm",
 ];
 
 export const HomePage: React.FC = () => {
   const { currentUser, showToast, openModal } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'fridge' | 'all' | 'saved'>('fridge');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<"fridge" | "all" | "saved">(
+    "fridge",
+  );
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 15, totalPages: 1, hasMore: false });
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 15,
+    totalPages: 1,
+    hasMore: false,
+  });
   const [loading, setLoading] = useState(false);
 
-  const [selectedRecipeDetail, setSelectedRecipeDetail] = useState<Recipe | null>(null);
+  const [selectedRecipeDetail, setSelectedRecipeDetail] =
+    useState<Recipe | null>(null);
 
   const handleAddIngredient = (ing: string) => {
     const cleanIng = ing.trim().toLowerCase();
@@ -69,7 +86,12 @@ export const HomePage: React.FC = () => {
           recipeImage: r.recipeImage || r.hinh_anh,
           khauPhan: r.khauPhan || r.khau_phan,
         }));
-        const meta = json.meta || { total: rawItems.length, page: 1, limit: 15, totalPages: 1 };
+        const meta = json.meta || {
+          total: rawItems.length,
+          page: 1,
+          limit: 15,
+          totalPages: 1,
+        };
 
         // Compute client-side match percentage for ingredients
         let processedItems = rawItems.map((recipe) => {
@@ -78,11 +100,15 @@ export const HomePage: React.FC = () => {
 
           if (selectedIngredients.length > 0 && totalIngCount > 0) {
             recipe.ingredients!.forEach((ingObj) => {
-              const ingName = (ingObj.ingredientName || ingObj.ingredient?.ingredientName || '').trim().toLowerCase();
+              const ingName = (ingObj.ingredient?.ingredientName || "")
+                .trim()
+                .toLowerCase();
               if (ingName) {
                 const isMatched = selectedIngredients.some((selected) => {
                   const s = selected.trim().toLowerCase();
-                  return s.length > 0 && (ingName.includes(s) || s.includes(ingName));
+                  return (
+                    s.length > 0 && (ingName.includes(s) || s.includes(ingName))
+                  );
                 });
                 if (isMatched) matchedCount += 1;
               }
@@ -90,7 +116,9 @@ export const HomePage: React.FC = () => {
           }
 
           const matchPercentage =
-            totalIngCount > 0 ? Math.round((matchedCount / totalIngCount) * 100) : 0;
+            totalIngCount > 0
+              ? Math.round((matchedCount / totalIngCount) * 100)
+              : 0;
           const missingCount = Math.max(0, totalIngCount - matchedCount);
           const isFullyMatched =
             selectedIngredients.length > 0 &&
@@ -108,10 +136,14 @@ export const HomePage: React.FC = () => {
 
         if (selectedIngredients.length > 0) {
           // Chỉ giữ lại các món ăn có chứa ít nhất 1 nguyên liệu trong tủ lạnh
-          processedItems = processedItems.filter((recipe) => (recipe.matchedCount || 0) > 0);
+          processedItems = processedItems.filter(
+            (recipe) => (recipe.matchedCount || 0) > 0,
+          );
 
           processedItems.sort(
-            (a, b) => (b.matchedCount || 0) - (a.matchedCount || 0) || (b.matchPercentage || 0) - (a.matchPercentage || 0)
+            (a, b) =>
+              (b.matchedCount || 0) - (a.matchedCount || 0) ||
+              (b.matchPercentage || 0) - (a.matchPercentage || 0),
           );
         }
 
@@ -129,7 +161,7 @@ export const HomePage: React.FC = () => {
         });
       }
     } catch (err) {
-      console.error('Fetch recipes error:', err);
+      console.error("Fetch recipes error:", err);
     } finally {
       setLoading(false);
     }
@@ -138,33 +170,42 @@ export const HomePage: React.FC = () => {
   // Fetch saved recipes for logged-in user
   const fetchSavedRecipes = async () => {
     if (!currentUser) {
-      showToast('⚠️ Vui lòng đăng nhập để xem danh sách công thức đã lưu!', 'error');
-      openModal('login');
+      showToast(
+        "⚠️ Vui lòng đăng nhập để xem danh sách công thức đã lưu!",
+        "error",
+      );
+      openModal("login");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetchWithAuth('/api/recipes/saved');
+      const res = await fetchWithAuth("/api/recipes/saved");
       const json = await res.json();
       if (json.success && json.data) {
         setRecipes(json.data);
-        setPagination({ total: json.data.length, page: 1, limit: 50, totalPages: 1, hasMore: false });
+        setPagination({
+          total: json.data.length,
+          page: 1,
+          limit: 50,
+          totalPages: 1,
+          hasMore: false,
+        });
       }
     } catch (err) {
-      console.error('Fetch saved recipes error:', err);
+      console.error("Fetch saved recipes error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTabChange = (tab: 'fridge' | 'all' | 'saved') => {
+  const handleTabChange = (tab: "fridge" | "all" | "saved") => {
     setActiveTab(tab);
-    if (tab === 'saved') {
+    if (tab === "saved") {
       fetchSavedRecipes();
-    } else if (tab === 'all') {
+    } else if (tab === "all") {
       setSelectedIngredients([]);
-      setSearchQuery('');
+      setSearchQuery("");
       fetchRecipes(1, false);
     } else {
       fetchRecipes(1, false);
@@ -172,7 +213,7 @@ export const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (activeTab !== 'saved') {
+    if (activeTab !== "saved") {
       fetchRecipes(1, false);
     }
   }, [selectedIngredients, searchQuery]);
@@ -200,7 +241,7 @@ export const HomePage: React.FC = () => {
       <Navbar activeTab={activeTab} onTabChange={handleTabChange} />
 
       <main className="container">
-        {activeTab !== 'saved' && (
+        {activeTab !== "saved" && (
           <>
             <HeroSection
               searchQuery={searchQuery}
@@ -219,35 +260,49 @@ export const HomePage: React.FC = () => {
         )}
 
         {/* Results Header */}
-        <section className="results-header" style={{ marginTop: '2rem' }}>
+        <section className="results-header" style={{ marginTop: "2rem" }}>
           <h2 className="results-heading">
-            {activeTab === 'saved'
-              ? '🔖 Công thức đã lưu của bạn'
+            {activeTab === "saved"
+              ? "🔖 Công thức đã lưu của bạn"
               : searchQuery && selectedIngredients.length > 0
-              ? `Kết quả cho "${searchQuery}" & Tủ lạnh`
-              : searchQuery
-              ? `Kết quả cho "${searchQuery}"`
-              : selectedIngredients.length > 0
-              ? 'Gợi ý phù hợp cho tủ lạnh của bạn'
-              : 'Thịnh hành hôm nay'}
+                ? `Kết quả cho "${searchQuery}" & Tủ lạnh`
+                : searchQuery
+                  ? `Kết quả cho "${searchQuery}"`
+                  : selectedIngredients.length > 0
+                    ? "Gợi ý phù hợp cho tủ lạnh của bạn"
+                    : "Thịnh hành hôm nay"}
           </h2>
 
-          <span className="results-count-badge">
-            {pagination.total} món ăn
-          </span>
+          <span className="results-count-badge">{pagination.total} món ăn</span>
         </section>
 
         {/* Recipes Grid */}
         {loading && recipes.length === 0 ? (
-          <div style={{ padding: '4rem', color: '#64748b', textAlign: 'center' }}>
-            <RefreshCw className="animate-spin" size={28} style={{ margin: '0 auto 1rem' }} />
+          <div
+            style={{ padding: "4rem", color: "#64748b", textAlign: "center" }}
+          >
+            <RefreshCw
+              className="animate-spin"
+              size={28}
+              style={{ margin: "0 auto 1rem" }}
+            />
             <div>Đang tải dữ liệu công thức nấu ăn...</div>
           </div>
         ) : recipes.length === 0 ? (
           <div className="empty-card">
-            <span className="empty-icon">{activeTab === 'saved' ? '🔖' : '🥣'}</span>
-            <h3>{activeTab === 'saved' ? 'Bạn chưa lưu công thức món ăn nào!' : 'Rất tiếc, chưa tìm thấy món ăn phù hợp!'}</h3>
-            <p>{activeTab === 'saved' ? 'Hãy bấm biểu tượng Bookmark trên các món ăn để lưu lại nấu sau nhé.' : 'Thử nhập thêm nguyên liệu khác hoặc đổi tên món ăn để khám phá thêm.'}</p>
+            <span className="empty-icon">
+              {activeTab === "saved" ? "🔖" : "🥣"}
+            </span>
+            <h3>
+              {activeTab === "saved"
+                ? "Bạn chưa lưu công thức món ăn nào!"
+                : "Rất tiếc, chưa tìm thấy món ăn phù hợp!"}
+            </h3>
+            <p>
+              {activeTab === "saved"
+                ? "Hãy bấm biểu tượng Bookmark trên các món ăn để lưu lại nấu sau nhé."
+                : "Thử nhập thêm nguyên liệu khác hoặc đổi tên món ăn để khám phá thêm."}
+            </p>
           </div>
         ) : (
           <div className="recipes-grid">
@@ -257,9 +312,9 @@ export const HomePage: React.FC = () => {
                 recipe={recipe}
                 selectedIngredients={selectedIngredients}
                 onOpenDetail={handleOpenDetail}
-                isSaved={activeTab === 'saved'}
+                isSaved={activeTab === "saved"}
                 onToggleSaveSuccess={() => {
-                  if (activeTab === 'saved') fetchSavedRecipes();
+                  if (activeTab === "saved") fetchSavedRecipes();
                 }}
               />
             ))}
@@ -277,7 +332,7 @@ export const HomePage: React.FC = () => {
               }}
               disabled={loading}
             >
-              {loading ? 'Đang tải...' : 'Xem thêm công thức nấu ăn'}
+              {loading ? "Đang tải..." : "Xem thêm công thức nấu ăn"}
             </button>
           </div>
         )}

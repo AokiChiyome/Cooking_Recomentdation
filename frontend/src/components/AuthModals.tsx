@@ -1,35 +1,51 @@
-import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { X, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { X, Eye, EyeOff } from "lucide-react";
 
 export const AuthModals: React.FC = () => {
-  const { activeModal, closeModal, handleLogin, handleRegister, currentUser, handleLogout } = useAuth();
+  const {
+    activeModal,
+    closeModal,
+    handleLogin,
+    handleRegister,
+    currentUser,
+    handleLogout,
+  } = useAuth();
 
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPass, setLoginPass] = useState('');
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPass, setLoginPass] = useState("");
   const [showLoginPass, setShowLoginPass] = useState(false);
 
-  const [regEmail, setRegEmail] = useState('');
-  const [regPass, setRegPass] = useState('');
+  const [regEmail, setRegEmail] = useState("");
+  const [regPass, setRegPass] = useState("");
   const [showRegPass, setShowRegPass] = useState(false);
-  const [regFirstName, setRegFirstName] = useState('');
-  const [regLastName, setRegLastName] = useState('');
+  const [regFirstName, setRegFirstName] = useState("");
+  const [regLastName, setRegLastName] = useState("");
 
   if (!activeModal) return null;
 
   return (
     <>
       {/* Login Modal */}
-      {activeModal === 'login' && (
-        <div className="modal-backdrop open" style={{ display: 'flex' }} onClick={closeModal}>
-          <div className="modal-card auth-modal-card" onClick={(e) => e.stopPropagation()}>
+      {activeModal === "login" && (
+        <div
+          className="modal-backdrop-home open"
+          style={{ display: "flex" }}
+          onClick={closeModal}
+        >
+          <div
+            className="modal-card-home auth-modal-card-home"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button className="btn-close-modal" onClick={closeModal}>
               <X size={20} />
             </button>
 
             <div className="auth-modal-header">
               <h3 className="auth-modal-title">Đăng Nhập SmartCook</h3>
-              <p className="auth-modal-subtitle">Truy cập tài khoản để lưu công thức & quản lý tủ lạnh</p>
+              <p className="auth-modal-subtitle">
+                Truy cập tài khoản để lưu công thức & quản lý tủ lạnh
+              </p>
             </div>
 
             <form
@@ -55,7 +71,7 @@ export const AuthModals: React.FC = () => {
                 <label className="auth-label">Mật khẩu</label>
                 <div className="password-input-wrapper">
                   <input
-                    type={showLoginPass ? 'text' : 'password'}
+                    type={showLoginPass ? "text" : "password"}
                     className="input-auth-field"
                     placeholder="••••••••"
                     value={loginPass}
@@ -72,33 +88,50 @@ export const AuthModals: React.FC = () => {
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-search-main" style={{ width: '100%', marginTop: '0.5rem' }}>
+              <button
+                type="submit"
+                className="btn btn-search-main-home"
+                style={{ width: "100%", marginTop: "0.5rem" }}
+              >
                 Đăng Nhập
               </button>
-
             </form>
           </div>
         </div>
       )}
 
       {/* Register Modal */}
-      {activeModal === 'register' && (
-        <div className="modal-backdrop open" style={{ display: 'flex' }} onClick={closeModal}>
-          <div className="modal-card auth-modal-card" onClick={(e) => e.stopPropagation()}>
+      {activeModal === "register" && (
+        <div
+          className="modal-backdrop-home open"
+          style={{ display: "flex" }}
+          onClick={closeModal}
+        >
+          <div
+            className="modal-card-home auth-modal-card-home"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button className="btn-close-modal" onClick={closeModal}>
               <X size={20} />
             </button>
 
             <div className="auth-modal-header">
               <h3 className="auth-modal-title">Tạo Tài Khoản Mới</h3>
-              <p className="auth-modal-subtitle">Tham gia cộng đồng SmartCook để lưu giữ hàng nghìn món ngon</p>
+              <p className="auth-modal-subtitle">
+                Tham gia cộng đồng SmartCook để lưu giữ hàng nghìn món ngon
+              </p>
             </div>
 
             <form
               className="form-auth"
               onSubmit={async (e) => {
                 e.preventDefault();
-                await handleRegister(regEmail, regPass, regFirstName, regLastName);
+                await handleRegister(
+                  regEmail,
+                  regPass,
+                  regFirstName,
+                  regLastName,
+                );
               }}
             >
               <div className="form-auth-row">
@@ -141,7 +174,7 @@ export const AuthModals: React.FC = () => {
                 <label className="auth-label">Mật khẩu</label>
                 <div className="password-input-wrapper">
                   <input
-                    type={showRegPass ? 'text' : 'password'}
+                    type={showRegPass ? "text" : "password"}
                     className="input-auth-field"
                     placeholder="Tối thiểu 6 ký tự"
                     value={regPass}
@@ -158,7 +191,11 @@ export const AuthModals: React.FC = () => {
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-search-main" style={{ width: '100%', marginTop: '0.5rem' }}>
+              <button
+                type="submit"
+                className="btn btn-search-main-home"
+                style={{ width: "100%", marginTop: "0.5rem" }}
+              >
                 Đăng Ký Tài Khoản
               </button>
             </form>
@@ -167,9 +204,16 @@ export const AuthModals: React.FC = () => {
       )}
 
       {/* Profile Modal */}
-      {activeModal === 'profile' && currentUser && (
-        <div className="modal-backdrop open" style={{ display: 'flex' }} onClick={closeModal}>
-          <div className="modal-card auth-modal-card" onClick={(e) => e.stopPropagation()}>
+      {activeModal === "profile" && currentUser && (
+        <div
+          className="modal-backdrop-home open"
+          style={{ display: "flex" }}
+          onClick={closeModal}
+        >
+          <div
+            className="modal-card-home auth-modal-card-home"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button className="btn-close-modal" onClick={closeModal}>
               <X size={20} />
             </button>
@@ -181,7 +225,9 @@ export const AuthModals: React.FC = () => {
                   alt="Avatar"
                 />
               </div>
-              <h3>{currentUser.firstName} {currentUser.lastName || ''}</h3>
+              <h3>
+                {currentUser.firstName} {currentUser.lastName || ""}
+              </h3>
               <p className="profile-email">{currentUser.email}</p>
             </div>
 
@@ -192,19 +238,37 @@ export const AuthModals: React.FC = () => {
               </div>
               <div className="profile-detail-item">
                 <span className="detail-label">Quyền hạn (Role):</span>
-                <span className="detail-value" style={{ fontWeight: 800, color: currentUser.role === 'ADMIN' ? '#f97316' : '#22c55e' }}>
-                  {currentUser.role === 'ADMIN' ? '👑 ADMIN' : '👤 USER'}
+                <span
+                  className="detail-value"
+                  style={{
+                    fontWeight: 800,
+                    color: currentUser.role
+                      .map((r) => r.roleName)
+                      .includes("admin")
+                      ? "#f97316"
+                      : "#22c55e",
+                  }}
+                >
+                  {currentUser.role.map((r) => r.roleName).includes("admin")
+                    ? "👑 ADMIN"
+                    : "👤 USER"}
                 </span>
               </div>
               <div className="profile-detail-item">
                 <span className="detail-label">Trạng thái bảo mật:</span>
-                <span className="detail-value badge-secure">🔒 JWT Auth Protected</span>
+                <span className="detail-value badge-secure">
+                  🔒 JWT Auth Protected
+                </span>
               </div>
             </div>
 
             <div className="profile-actions">
-              <button className="btn btn-secondary" onClick={closeModal}>Đóng</button>
-              <button className="btn btn-danger" onClick={handleLogout}>🚪 Đăng xuất</button>
+              <button className="btn btn-secondary" onClick={closeModal}>
+                Đóng
+              </button>
+              <button className="btn btn-danger" onClick={handleLogout}>
+                🚪 Đăng xuất
+              </button>
             </div>
           </div>
         </div>
