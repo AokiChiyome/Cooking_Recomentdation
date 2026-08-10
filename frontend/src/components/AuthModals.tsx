@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, Eye, EyeOff } from 'lucide-react';
+import { X, Eye, EyeOff, LogOut, User as UserIcon, Mail } from 'lucide-react';
 
 export const AuthModals: React.FC = () => {
   const { activeModal, closeModal, handleLogin, handleRegister, currentUser, handleLogout } = useAuth();
@@ -75,7 +75,6 @@ export const AuthModals: React.FC = () => {
               <button type="submit" className="btn btn-search-main" style={{ width: '100%', marginTop: '0.5rem' }}>
                 Đăng Nhập
               </button>
-
             </form>
           </div>
         </div>
@@ -169,42 +168,93 @@ export const AuthModals: React.FC = () => {
       {/* Profile Modal */}
       {activeModal === 'profile' && currentUser && (
         <div className="modal-backdrop open" style={{ display: 'flex' }} onClick={closeModal}>
-          <div className="modal-card auth-modal-card" onClick={(e) => e.stopPropagation()}>
-            <button className="btn-close-modal" onClick={closeModal}>
+          <div className="modal-card auth-modal-card" onClick={(e) => e.stopPropagation()} style={{ padding: '2rem' }}>
+            <button className="btn-close-modal" onClick={closeModal} style={{ top: '1.25rem', right: '1.25rem' }}>
               <X size={20} />
             </button>
 
-            <div className="profile-header">
-              <div className="profile-avatar-lg">
+            <div className="profile-header" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+              <div className="profile-avatar-lg" style={{ margin: '0 auto 1rem' }}>
                 <img
                   src={`https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(currentUser.email)}`}
                   alt="Avatar"
                 />
               </div>
-              <h3>{currentUser.firstName} {currentUser.lastName || ''}</h3>
-              <p className="profile-email">{currentUser.email}</p>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                {currentUser.lastName ? `${currentUser.lastName} ` : ''}{currentUser.firstName}
+              </h3>
+              <p className="profile-email" style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '0.25rem' }}>
+                {currentUser.email}
+              </p>
             </div>
 
-            <div className="profile-details">
-              <div className="profile-detail-item">
-                <span className="detail-label">Mã tài khoản (User ID):</span>
-                <span className="detail-value code">{currentUser.userId}</span>
-              </div>
-              <div className="profile-detail-item">
-                <span className="detail-label">Quyền hạn (Role):</span>
-                <span className="detail-value" style={{ fontWeight: 800, color: currentUser.role === 'ADMIN' ? '#f97316' : '#22c55e' }}>
-                  {currentUser.role === 'ADMIN' ? '👑 ADMIN' : '👤 USER'}
+            <div className="profile-details" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.75rem' }}>
+              <div className="profile-detail-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #f1f5f9' }}>
+                <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.9rem', fontWeight: 500 }}>
+                  <UserIcon size={16} /> Họ và tên:
+                </span>
+                <span className="detail-value" style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.92rem' }}>
+                  {currentUser.lastName ? `${currentUser.lastName} ` : ''}{currentUser.firstName}
                 </span>
               </div>
-              <div className="profile-detail-item">
-                <span className="detail-label">Trạng thái bảo mật:</span>
-                <span className="detail-value badge-secure">🔒 JWT Auth Protected</span>
+
+              <div className="profile-detail-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', backgroundColor: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #f1f5f9' }}>
+                <span className="detail-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.9rem', fontWeight: 500 }}>
+                  <Mail size={16} /> Email:
+                </span>
+                <span className="detail-value" style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.92rem' }}>
+                  {currentUser.email}
+                </span>
               </div>
             </div>
 
-            <div className="profile-actions">
-              <button className="btn btn-secondary" onClick={closeModal}>Đóng</button>
-              <button className="btn btn-danger" onClick={handleLogout}>🚪 Đăng xuất</button>
+            <div className="profile-actions" style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn-profile-close"
+                onClick={closeModal}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.65rem 1.4rem',
+                  borderRadius: '0.75rem',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#f8fafc',
+                  color: '#334155',
+                  fontWeight: 600,
+                  fontSize: '0.92rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Đóng
+              </button>
+
+              <button
+                type="button"
+                className="btn-profile-logout"
+                onClick={handleLogout}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.65rem 1.4rem',
+                  borderRadius: '0.75rem',
+                  border: '1px solid #fecaca',
+                  backgroundColor: '#fef2f2',
+                  color: '#dc2626',
+                  fontWeight: 600,
+                  fontSize: '0.92rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 6px rgba(220, 38, 38, 0.08)',
+                }}
+              >
+                <LogOut size={17} /> Đăng xuất
+              </button>
             </div>
           </div>
         </div>
@@ -212,3 +262,4 @@ export const AuthModals: React.FC = () => {
     </>
   );
 };
+
