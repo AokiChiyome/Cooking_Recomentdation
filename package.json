@@ -8,7 +8,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
+    "prisma:format": "prisma format",
     "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:migrate:status": "prisma migrate status",
     "prisma:studio": "prisma studio"
   },
   "keywords": [

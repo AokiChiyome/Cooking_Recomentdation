@@ -12,7 +12,7 @@ services:
       --join=roach1:26257,roach2:26257,roach3:26257
 
     ports:
-      - "26256:26257"
+      - "26257:26257"
       - "8080:8080"
     volumes:
       - roach1:/cockroach/cockroach-data

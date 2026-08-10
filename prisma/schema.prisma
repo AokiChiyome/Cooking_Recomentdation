@@ -6,16 +6,31 @@ datasource db {
   provider = "cockroachdb"
 }
 
+model Role {
+  roleId    String   @id @default(dbgenerated("gen_random_uuid()")) @map("role_id") @db.Uuid
+  roleName  String   @unique @map("role_name")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy String   @map("created_by") @db.Uuid
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy String   @map("updated_by") @db.Uuid
+
+  users User[] @relation("UserRoles")
+}
+
 model User {
-  userId             String           @id @default(dbgenerated("gen_random_uuid()")) @map("user_id") @db.Uuid
-  firstName          String           @map("first_name")
-  lastName           String?          @map("last_name")
-  email              String           @unique
-  password           String
-  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy          String           @map("created_by") @db.Uuid
-  updatedAt          DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
-  updatedBy          String           @map("updated_by") @db.Uuid
+  userId    String  @id @default(dbgenerated("gen_random_uuid()")) @map("user_id") @db.Uuid
+  firstName String  @map("first_name")
+  lastName  String? @map("last_name")
+  email     String  @unique
+  password  String
+
+  role Role[] @relation("UserRoles")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy String   @map("created_by") @db.Uuid
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy String   @map("updated_by") @db.Uuid
+
   categoriesCreated  Category[]       @relation("CategoryCreatedBy")
   categoriesUpdated  Category[]       @relation("CategoryUpdatedBy")
   ingredientsCreated Ingredient[]     @relation("IngredientCreatedBy")
@@ -52,9 +67,9 @@ model Ingredient {
   ingredientId      String                   @id @default(dbgenerated("gen_random_uuid()")) @map("ingredient_id") @db.Uuid
   ingredientName    String                   @map("ingredient_name")
   createdAt         DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy         String?                  @map("created_by") @db.Uuid
+  createdBy         String                   @map("created_by") @db.Uuid
   updatedAt         DateTime                 @default(now()) @map("updated_at") @db.Timestamptz(6)
-  updatedBy         String?                  @map("updated_by") @db.Uuid
+  updatedBy         String                   @map("updated_by") @db.Uuid
   categoryLinks     IngredientCategoryLink[]
   createdByUser     User?                    @relation("IngredientCreatedBy", fields: [createdBy], references: [userId], onDelete: NoAction, onUpdate: NoAction, map: "fk_ingredients_created_by_users")
   updatedByUser     User?                    @relation("IngredientUpdatedBy", fields: [updatedBy], references: [userId], onDelete: NoAction, onUpdate: NoAction, map: "fk_ingredients_updated_by_users")
@@ -81,7 +96,7 @@ model Recipe {
   recipeId          String             @id @default(dbgenerated("gen_random_uuid()")) @map("recipe_id") @db.Uuid
   recipeName        String             @map("recipe_name")
   recipeDescription String?            @map("recipe_description")
-  cookTime          Int             @map("cook_time")
+  cookTime          Int                @map("cook_time")
   khau_phan         String?
   hinh_anh          String?
   difficulty        String             @default("0") @db.Char(1)
@@ -130,7 +145,7 @@ model RecipeIngredient {
 model RecipeStep {
   stepId      String  @id @default(dbgenerated("gen_random_uuid()")) @map("step_id") @db.Uuid
   recipeId    String? @map("recipe_id") @db.Uuid
-  stepNumber  Int  @map("step_number")
+  stepNumber  Int     @map("step_number")
   description String
   recipe      Recipe? @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade, onUpdate: NoAction)
 
@@ -153,12 +168,11 @@ model UserIngredient {
 }
 
 model RecipeCategory {
-  recipeId   String   @map("recipe_id") @db.Uuid
-  categoryId String   @map("category_id") @db.Uuid
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy  String   @map("created_by") @db.Uuid
-  category   Category @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe_categories_category")
-  recipe     Recipe   @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe_categories_recipe")
+  recipeId   String @map("recipe_id") @db.Uuid
+  categoryId String @map("category_id") @db.Uuid
+
+  category Category @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe_categories_category")
+  recipe   Recipe   @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipe_categories_recipe")
 
   @@id([recipeId, categoryId])
   @@map("recipe_categories")

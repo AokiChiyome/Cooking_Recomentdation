@@ -1,0 +1,789 @@
+/* admin.css
+   Cùng ngôn ngữ thiết kế với dashboard: "hộp thẻ chỉ mục công thức".
+   Thẻ giấy có mép đục lỗ, tab nhãn góc, số liệu mono kiểu đồng hồ bếp,
+   tiêu đề serif kiểu sách nấu ăn. */
+
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap");
+
+.admin-page-react {
+  --paper: #faf6ee;
+  --card: #f5efdf;
+  --ink: #2b2622;
+  --ink-soft: #6b6152;
+  --rule: #ddceac;
+  --paprika: #c1432e;
+  --herb: #5b7553;
+  --turmeric: #b8862e;
+  --paprika-tint: #f3ded8;
+  --herb-tint: #e2e8dd;
+  --turmeric-tint: #f0e3c8;
+
+  min-height: 100vh;
+  background: var(--paper);
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(43, 38, 34, 0.05) 1px,
+    transparent 0
+  );
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family:
+    "Inter",
+    -apple-system,
+    sans-serif;
+}
+
+/* ---------- Navbar ---------- */
+
+.admin-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px clamp(16px, 4vw, 48px);
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper);
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: "Fraunces", serif;
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.admin-brand svg {
+  color: var(--paprika);
+}
+
+.admin-badge {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paprika);
+  background: var(--paprika-tint);
+  border: 1px solid var(--paprika);
+  padding: 3px 9px 2px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+.admin-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-back-home,
+.admin-nav-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.btn-back-home:hover,
+.admin-nav-actions .btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ---------- Container ---------- */
+
+.admin-container {
+  padding: 28px clamp(16px, 4vw, 48px) 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ---------- Stat cards ---------- */
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--paprika);
+  border-radius: 3px;
+  padding: 16px;
+}
+
+.admin-stats-grid .stat-card:nth-child(2) {
+  border-left-color: var(--herb);
+}
+.admin-stats-grid .stat-card:nth-child(3) {
+  border-left-color: var(--turmeric);
+}
+.admin-stats-grid .stat-card:nth-child(4) {
+  border-left-color: var(--ink);
+}
+
+.stat-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.stat-bg-orange {
+  background: var(--paprika-tint);
+  color: var(--paprika);
+}
+.stat-bg-blue {
+  background: var(--herb-tint);
+  color: var(--herb);
+}
+.stat-bg-green {
+  background: var(--turmeric-tint);
+  color: var(--turmeric);
+}
+.stat-bg-purple {
+  background: #e7e2da;
+  color: var(--ink);
+}
+
+.stat-info h4 {
+  margin: 0 0 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.stat-number {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* ---------- Nav tabs (Quản lý / Thống kê) ---------- */
+
+.admin-nav-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.admin-nav-tab {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink-soft);
+  padding: 8px 13px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.admin-nav-tab:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.admin-nav-tab.active {
+  color: var(--paprika);
+  background: var(--paprika-tint);
+  border-color: var(--paprika);
+}
+
+/* ---------- Generic index-card (dùng cho dashboard charts) ---------- */
+
+.card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 22px 20px 20px;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--rule) 0,
+    var(--rule) 4px,
+    transparent 4px,
+    transparent 9px
+  );
+}
+
+.card-tab {
+  display: inline-block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-bottom: none;
+  padding: 4px 10px 3px;
+  border-radius: 3px 3px 0 0;
+  position: relative;
+  top: -22px;
+  margin-bottom: -14px;
+}
+
+.card-title {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 17px;
+  margin: 0 0 14px;
+}
+
+.accent-paprika .card-tab {
+  color: var(--paprika);
+}
+.accent-herb .card-tab {
+  color: var(--herb);
+}
+.accent-turmeric .card-tab {
+  color: var(--turmeric);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 18px;
+}
+
+.span-4 {
+  grid-column: span 4;
+}
+.span-6 {
+  grid-column: span 6;
+}
+.span-8 {
+  grid-column: span 8;
+}
+.span-12 {
+  grid-column: span 12;
+}
+
+@media (max-width: 900px) {
+  .span-4,
+  .span-6,
+  .span-8,
+  .span-12 {
+    grid-column: span 12;
+  }
+}
+
+.dash-loading,
+.dash-error {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  color: var(--ink-soft);
+  padding: 40px 0;
+  text-align: center;
+}
+
+.dash-error {
+  color: var(--paprika);
+}
+
+.dash-refresh {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 9px 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
+}
+.dash-refresh:hover {
+  background: var(--paprika);
+}
+.dash-refresh:active {
+  transform: translateY(1px);
+}
+.dash-refresh:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---------- Table (dùng chung cho bảng hoạt động gần đây) ---------- */
+
+.recipe-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.recipe-table th {
+  text-align: left;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--ink);
+  padding: 0 8px 8px 0;
+  font-weight: 500;
+}
+
+.recipe-table td {
+  padding: 9px 8px 9px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.recipe-table tr:last-child td {
+  border-bottom: none;
+}
+
+.table-empty {
+  color: var(--ink-soft);
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+/* ---------- Panel card (bảng quản lý công thức) ---------- */
+
+.admin-panel-card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 26px 22px 22px;
+}
+
+.admin-panel-card::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--rule) 0,
+    var(--rule) 4px,
+    transparent 4px,
+    transparent 9px
+  );
+}
+
+.admin-panel-card::after {
+  content: "Quản lý";
+  position: absolute;
+  top: -22px;
+  left: 20px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paprika);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-bottom: none;
+  padding: 4px 10px 3px;
+  border-radius: 3px 3px 0 0;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.panel-title {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  font-size: 19px;
+  margin: 0;
+}
+
+.admin-table-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-search-input {
+  font-family: "Inter", sans-serif;
+  font-size: 13.5px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 9px 12px;
+  color: var(--ink);
+  min-width: 220px;
+}
+
+.admin-search-input:focus {
+  outline: 2px solid var(--paprika);
+  outline-offset: 1px;
+  border-color: var(--paprika);
+}
+
+.btn-create-recipe {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--paprika);
+  color: var(--paper);
+  border: none;
+  border-radius: 3px;
+  padding: 9px 15px;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
+}
+
+.btn-create-recipe:hover {
+  background: #a2381f;
+}
+.btn-create-recipe:active {
+  transform: translateY(1px);
+}
+
+/* ---------- Table ---------- */
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.admin-table th {
+  text-align: left;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 500;
+  border-bottom: 1px solid var(--ink);
+  padding: 0 10px 9px 0;
+}
+
+.admin-table td {
+  padding: 11px 10px 11px 0;
+  border-bottom: 1px dashed var(--rule);
+  vertical-align: middle;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.recipe-thumb {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 6px 11px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.btn-action-delete:hover {
+  background: var(--paprika);
+  color: var(--paper);
+  border-color: var(--paprika);
+}
+
+.table-empty-row {
+  text-align: center;
+  padding: 2rem 0;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+}
+
+.recipe-id-caption {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.table-inline-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.table-inline-icon svg {
+  color: var(--paprika);
+  flex-shrink: 0;
+}
+
+/* ---------- Pagination ---------- */
+
+.admin-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.admin-pagination-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.btn-secondary {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 3px;
+  padding: 7px 13px;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ---------- Modal (Thêm món ăn) ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 38, 34, 0.55);
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 24px;
+}
+
+.modal-card {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 30px 26px 26px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-card::before {
+  content: "Thêm món ăn mới";
+  position: absolute;
+  top: -1px;
+  left: 22px;
+  transform: translateY(-100%);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--herb);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-bottom: none;
+  padding: 4px 10px 3px;
+  border-radius: 3px 3px 0 0;
+}
+
+.btn-close-modal {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+}
+
+.btn-close-modal:hover {
+  color: var(--paprika);
+}
+
+.auth-modal-header {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.auth-modal-title {
+  font-family: "Fraunces", serif;
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0 0 6px;
+}
+
+.auth-modal-subtitle {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.form-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-auth-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.auth-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.input-auth-field {
+  font-family: "Inter", sans-serif;
+  font-size: 13.5px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 10px 12px;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.input-auth-field:focus {
+  outline: 2px solid var(--paprika);
+  outline-offset: 1px;
+  border-color: var(--paprika);
+}
+
+.btn-search-main {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 3px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.btn-search-main:hover {
+  background: var(--paprika);
+}
+
+@media (max-width: 640px) {
+  .form-auth-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-create-recipe,
+  .btn-search-main,
+  .btn-action,
+  .btn-secondary,
+  .btn-back-home {
+    transition: none;
+  }
+}
