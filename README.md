@@ -47,17 +47,22 @@ backend/
 └── tsconfig.json
 ```
 
-## 2. Cài đặt CockroachDB (local, chế độ insecure - cho dev)
+## 2. Cài đặt CSDL Phân tán CockroachDB (Cụm 3 Nodes + HAProxy)
 
 ```bash
-# Tải & chạy 1 node CockroachDB local
-cockroach start-single-node --insecure --listen-addr=localhost:26257
+# 1. Bật cụm Docker 3 nodes + HAProxy Load Balancer
+cd docker
+docker-compose up -d
 
-# Tạo database
-cockroach sql --insecure --host=localhost:26257 -e "CREATE DATABASE backend_db;"
+# 2. BẮT BUỘC: Khởi tạo cụm (Chạy 1 lần khi mới clone về)
+docker exec -it roach1 cockroach init --insecure
 ```
 
-> Nếu dùng **CockroachDB Cloud (Serverless)**, lấy connection string trong dashboard và điền vào `DATABASE_URL` (dạng `sslmode=verify-full`).
+> **Kết nối DBeaver / GUI Tools:**  
+> - **Host:** `localhost`  
+> - **Port:** `26260` *(Cổng HAProxy Load Balancer — Không dùng cổng lẻ 26256, 26258, 26259)*  
+> - **Database:** `defaultdb`  
+> - **User:** `root` | **Password:** *(để trống)*
 
 ## 3. Cài đặt dự án
 

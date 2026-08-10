@@ -9,7 +9,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
-  const { currentUser, openModal, handleLogout } = useAuth();
+  const { currentUser, openModal, handleLogout, showToast } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
@@ -34,9 +34,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
           </li>
           <li>
             <button
-              className={`nav-link ${activeTab === 'all' ? 'active' : ''}`}
+              className="nav-link"
               style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-              onClick={() => onTabChange('all')}
+              onClick={() => {
+                showToast('🚀 Chức năng đang phát triển, vui lòng quay lại sau nhé!', 'info');
+              }}
             >
               Công thức mới
             </button>

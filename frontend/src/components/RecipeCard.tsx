@@ -21,10 +21,24 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   onToggleSaveSuccess,
 }) => {
   const { currentUser, openModal, showToast } = useAuth();
-  const [saved, setSaved] = useState(initialIsSaved);
+  const [saved, setSaved] = React.useState<boolean>(() => {
+    if (!currentUser) return false;
+    const savedKey = `saved_recipes_${currentUser.userId}`;
+    const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
+    return savedIds.includes(recipe.recipeId);
+  });
 
+  React.useEffect(() => {
+    if (!currentUser) {
+      setSaved(false);
+    } else {
+      const savedKey = `saved_recipes_${currentUser.userId}`;
+      const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
+      setSaved(savedIds.includes(recipe.recipeId));
+    }
+  }, [currentUser, recipe.recipeId]);
 
-  const handleToggleSave = async (e: React.MouseEvent) => {
+  const handleToggleSave = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUser) {
       showToast('⚠️ Vui lòng đăng nhập để lưu công thức món ăn yêu thích.', 'error');
@@ -32,20 +46,30 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       return;
     }
 
-    const method = saved ? 'DELETE' : 'POST';
-    try {
-      const res = await fetchWithAuth(`/api/recipes/${recipe.recipeId}/save`, { method });
-      const json = await res.json();
-      if (json.success) {
-        setSaved(!saved);
-        showToast(
-          saved ? '🗑️ Đã xóa món ăn khỏi danh sách đã lưu.' : '⭐ Đã lưu món ăn vào danh sách yêu thích!',
-          'success'
-        );
-        if (onToggleSaveSuccess) onToggleSaveSuccess();
-      }
-    } catch (err) {
-      console.error('Toggle save error:', err);
+    const savedKey = `saved_recipes_${currentUser.userId}`;
+    const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
+
+    let newSavedIds: string[] = [];
+    let isNowSaved = false;
+
+    if (savedIds.includes(recipe.recipeId)) {
+      newSavedIds = savedIds.filter((id) => id !== recipe.recipeId);
+      isNowSaved = false;
+    } else {
+      newSavedIds = [...savedIds, recipe.recipeId];
+      isNowSaved = true;
+    }
+
+    localStorage.setItem(savedKey, JSON.stringify(newSavedIds));
+    setSaved(isNowSaved);
+
+    showToast(
+      isNowSaved ? '⭐ Đã lưu món ăn vào danh sách yêu thích!' : '🗑️ Đã xóa món ăn khỏi danh sách đã lưu.',
+      isNowSaved ? 'success' : 'info'
+    );
+
+    if (onToggleSaveSuccess) {
+      onToggleSaveSuccess();
     }
   };
 
