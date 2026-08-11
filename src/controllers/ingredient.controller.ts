@@ -30,4 +30,10 @@ export const ingredientController = {
     await ingredientService.remove(req.params.id);
     res.json({ success: true, message: "Xoá nguyên liệu thành công" });
   }),
+
+  getTopPopular: asyncHandler(async (req: Request, res: Response) => {
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+    const items = await ingredientService.getTopPopular(limit);
+    res.json({ success: true, data: items });
+  }),
 };

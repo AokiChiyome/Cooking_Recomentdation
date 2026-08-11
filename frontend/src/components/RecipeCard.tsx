@@ -38,7 +38,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     }
   }, [currentUser, recipe.recipeId]);
 
-  const handleToggleSave = (e: React.MouseEvent) => {
+  const handleToggleSave = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUser) {
       showToast('⚠️ Vui lòng đăng nhập để lưu công thức món ăn yêu thích.', 'error');
@@ -46,30 +46,32 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       return;
     }
 
-    const savedKey = `saved_recipes_${currentUser.userId}`;
-    const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
+    const method = saved ? 'DELETE' : 'POST';
+    try {
+      const res = await fetchWithAuth(`/api/recipes/${recipe.recipeId}/save`, { method });
+      const json = await res.json();
+      if (json.success) {
+        const nextState = !saved;
+        setSaved(nextState);
 
-    let newSavedIds: string[] = [];
-    let isNowSaved = false;
+        const savedKey = `saved_recipes_${currentUser.userId}`;
+        const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
+        const updatedIds = nextState
+          ? [...savedIds.filter((id) => id !== recipe.recipeId), recipe.recipeId]
+          : savedIds.filter((id) => id !== recipe.recipeId);
+        localStorage.setItem(savedKey, JSON.stringify(updatedIds));
 
-    if (savedIds.includes(recipe.recipeId)) {
-      newSavedIds = savedIds.filter((id) => id !== recipe.recipeId);
-      isNowSaved = false;
-    } else {
-      newSavedIds = [...savedIds, recipe.recipeId];
-      isNowSaved = true;
-    }
+        showToast(
+          nextState ? '⭐ Đã lưu món ăn vào CSDL!' : '🗑️ Đã xóa món ăn khỏi danh sách đã lưu.',
+          nextState ? 'success' : 'info'
+        );
 
-    localStorage.setItem(savedKey, JSON.stringify(newSavedIds));
-    setSaved(isNowSaved);
-
-    showToast(
-      isNowSaved ? '⭐ Đã lưu món ăn vào danh sách yêu thích!' : '🗑️ Đã xóa món ăn khỏi danh sách đã lưu.',
-      isNowSaved ? 'success' : 'info'
-    );
-
-    if (onToggleSaveSuccess) {
-      onToggleSaveSuccess();
+        if (onToggleSaveSuccess) {
+          onToggleSaveSuccess();
+        }
+      }
+    } catch (err) {
+      console.error('Save recipe error:', err);
     }
   };
 

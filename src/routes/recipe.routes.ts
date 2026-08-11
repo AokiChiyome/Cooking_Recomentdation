@@ -80,9 +80,9 @@ router.get(
   recipeInsightsController.missingIngredients
 );
 
-// =========================================================================
-// CRUD chuẩn cho Recipe
-// =========================================================================
+router.get("/saved", authenticate, recipeController.getSaved);
+router.post("/:id/save", authenticate, validateParams(idParamSchema), recipeController.save);
+router.delete("/:id/save", authenticate, validateParams(idParamSchema), recipeController.unsave);
 
 router.get("/", validateQuery(listRecipeQuerySchema), recipeController.list);
 router.get("/:id", validateParams(idParamSchema), recipeController.getById);

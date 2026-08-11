@@ -172,4 +172,30 @@ export const ingredientService = {
       return { id };
     });
   },
+
+  async getTopPopular(limit = 10) {
+    const popular = await prisma.recipeIngredient.groupBy({
+      by: ["ingredientId"],
+      _count: {
+        recipeId: true,
+      },
+      orderBy: {
+        _count: {
+          recipeId: "desc",
+        },
+      },
+      take: limit,
+    });
+
+    const ingredientIds = popular.map((p) => p.ingredientId);
+    const ingredients = await prisma.ingredient.findMany({
+      where: {
+        ingredientId: { in: ingredientIds },
+      },
+    });
+
+    return ingredients
+      .sort((a, b) => ingredientIds.indexOf(a.ingredientId) - ingredientIds.indexOf(b.ingredientId))
+      .map((i) => i.ingredientName);
+  },
 };

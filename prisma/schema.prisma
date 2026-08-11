@@ -39,6 +39,7 @@ model User {
   recipesUpdated     Recipe[]         @relation("RecipeUpdatedBy")
   refresh_tokens     RefreshToken[]
   userIngredients    UserIngredient[]
+  userRecipes        UserRecipe[]
 
   @@map("users")
 }
@@ -107,6 +108,7 @@ model Recipe {
   recipeCategories  RecipeCategory[]
   ingredients       RecipeIngredient[]
   steps             RecipeStep[]
+  userRecipes       UserRecipe[]
   createdByUser     User?              @relation("RecipeCreatedBy", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipescreatedby_users")
   updatedByUser     User?              @relation("RecipeUpdatedBy", fields: [updatedBy], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "fk_recipesupdatedby_users")
 
@@ -188,4 +190,16 @@ model RefreshToken {
   users     User     @relation(fields: [userId], references: [userId], onDelete: Cascade, onUpdate: NoAction, map: "fk_refresh_tokens_user")
 
   @@map("refresh_tokens")
+}
+
+model UserRecipe {
+  userId    String   @map("user_id") @db.Uuid
+  recipeId  String   @map("recipe_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  recipe Recipe @relation(fields: [recipeId], references: [recipeId], onDelete: Cascade)
+
+  @@id([userId, recipeId])
+  @@map("user_recipes")
 }

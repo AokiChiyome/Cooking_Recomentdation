@@ -30,4 +30,22 @@ export const recipeController = {
     await recipeService.remove(req.params.id);
     res.json({ success: true, message: "Xoá công thức thành công" });
   }),
+
+  save: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized();
+    await recipeService.saveRecipe(req.user.userId, req.params.id);
+    res.json({ success: true, message: "Đã lưu công thức thành công" });
+  }),
+
+  unsave: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized();
+    await recipeService.unsaveRecipe(req.user.userId, req.params.id);
+    res.json({ success: true, message: "Đã xóa công thức khỏi danh sách đã lưu" });
+  }),
+
+  getSaved: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized();
+    const saved = await recipeService.getSavedRecipes(req.user.userId);
+    res.json({ success: true, data: saved });
+  }),
 };

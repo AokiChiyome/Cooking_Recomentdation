@@ -12,6 +12,7 @@ import { uuidParamSchema } from "../validators/common.validator";
 const router = Router();
 const idParamSchema = uuidParamSchema("id");
 
+router.get("/top-popular", ingredientController.getTopPopular);
 router.get("/", validateQuery(listIngredientQuerySchema), ingredientController.list);
 router.get("/:id", validateParams(idParamSchema), ingredientController.getById);
 router.post("/", authenticate, validate(createIngredientSchema), ingredientController.create);

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import { RefreshCw } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import type { Recipe } from "../../types";
@@ -9,33 +8,18 @@ import { RecipeCard } from "../../components/RecipeCard";
 import { RecipeDetailModal } from "../../components/recipeDetailModal/RecipeDetailModal";
 import { FridgeSection } from "../../components/FridgeSection";
 import { Navbar } from "../../components/Navbar";
-
-const SUGGESTED_INGREDIENTS = [
-  "thịt bò",
-  "thịt heo",
-  "thịt gà",
-  "trứng",
-  "cà chua",
-  "hành tây",
-  "tỏi",
-  "khoai tây",
-  "rau muống",
-  "tôm",
-];
+import { fetchWithAuth } from "../../services/api";
 
 export const HomePage: React.FC = () => {
   const { currentUser, showToast, openModal } = useAuth();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<"fridge" | "all" | "saved">(
-    "fridge",
-  );
+  const [activeTab, setActiveTab] = useState<"fridge" | "all" | "saved">("fridge");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [page, setPage] = useState(1);
-  const [selectedRecipeDetail, setSelectedRecipeDetail] =
-    useState<Recipe | null>(null);
+  const [selectedRecipeDetail, setSelectedRecipeDetail] = useState<Recipe | null>(null);
 
   // 1. Fetch categories with TanStack Query
   const { data: categories = [] } = useQuery({
@@ -48,7 +32,18 @@ export const HomePage: React.FC = () => {
     staleTime: 1000 * 60 * 60, // 1 hour cache
   });
 
-  // 2. Fetch search & fridge recipes with TanStack Query (Instant 0ms cached switching)
+  // 2. Fetch top popular ingredients dynamically from DB for suggestions
+  const { data: suggestedIngredients = [] } = useQuery({
+    queryKey: ["popularIngredients"],
+    queryFn: async () => {
+      const res = await fetch("/api/ingredients/top-popular?limit=10");
+      const json = await res.json();
+      return json.success && Array.isArray(json.data) ? json.data : [];
+    },
+    staleTime: 1000 * 60 * 60,
+  });
+
+  // 3. Fetch recipes for fridge & search queries
   const { data: recipesData, isLoading: isRecipesLoading } = useQuery({
     queryKey: [
       "recipes",
@@ -152,40 +147,30 @@ export const HomePage: React.FC = () => {
       };
     },
     enabled: activeTab !== "saved",
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5,
   });
 
-  // 3. Fetch saved recipes for logged-in user with TanStack Query
+  // 4. Fetch saved recipes for logged-in user directly from CockroachDB user_recipes table
   const { data: savedRecipesData = [], isLoading: isSavedLoading } = useQuery({
     queryKey: ["savedRecipes", currentUser?.userId],
     queryFn: async () => {
       if (!currentUser) return [];
-      const savedKey = `saved_recipes_${currentUser.userId}`;
-      const savedIds: string[] = JSON.parse(
-        localStorage.getItem(savedKey) || "[]",
-      );
-      if (savedIds.length === 0) return [];
-
-      const fetched: Recipe[] = [];
-      for (const id of savedIds) {
-        try {
-          const res = await fetch(`/api/recipes/${id}`);
-          const json = await res.json();
-          if (json.success && json.data) {
-            fetched.push({
-              ...json.data,
-              recipeImage: json.data.recipeImage || json.data.hinh_anh,
-              khauPhan: json.data.khauPhan || json.data.khau_phan,
-            });
-          }
-        } catch (e) {
-          console.error("Fetch saved item error:", e);
+      try {
+        const res = await fetchWithAuth("/api/recipes/saved");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          return json.data.map((r: any) => ({
+            ...r,
+            recipeImage: r.recipeImage || r.hinh_anh,
+            khauPhan: r.khauPhan || r.khau_phan,
+          }));
         }
+      } catch (err) {
+        console.error("Fetch saved recipes DB error:", err);
       }
-      return fetched;
+      return [];
     },
     enabled: activeTab === "saved" && !!currentUser,
-    staleTime: 0,
   });
 
   // Decide current active recipe list & loading state
@@ -215,7 +200,10 @@ export const HomePage: React.FC = () => {
   };
 
   const handleSuggestRandom = () => {
-    const shuffled = [...SUGGESTED_INGREDIENTS].sort(() => 0.5 - Math.random());
+    const list = suggestedIngredients.length > 0
+      ? suggestedIngredients
+      : ["thịt bò", "thịt heo", "thịt gà", "trứng", "cà chua", "tỏi", "tôm"];
+    const shuffled = [...list].sort(() => 0.5 - Math.random());
     setSelectedIngredients(shuffled.slice(0, 3));
     setPage(1);
   };
@@ -270,6 +258,7 @@ export const HomePage: React.FC = () => {
               onAddIngredient={handleAddIngredient}
               onTriggerSearch={() => setPage(1)}
               onSuggestRandom={handleSuggestRandom}
+              suggestedIngredients={suggestedIngredients}
             />
 
             <FridgeSection
@@ -285,13 +274,15 @@ export const HomePage: React.FC = () => {
           <h2 className="results-heading">
             {activeTab === "saved"
               ? "🔖 Công thức đã lưu của bạn"
+              : activeTab === "fridge" && selectedIngredients.length === 0
+              ? "🧊 Tủ lạnh của bạn đang trống"
               : searchQuery && selectedIngredients.length > 0
-                ? `Kết quả cho "${searchQuery}" & Tủ lạnh`
-                : searchQuery
-                  ? `Kết quả cho "${searchQuery}"`
-                  : selectedIngredients.length > 0
-                    ? "Gợi ý phù hợp cho tủ lạnh của bạn"
-                    : "Thịnh hành hôm nay"}
+              ? `Kết quả cho "${searchQuery}" & Tủ lạnh`
+              : searchQuery
+              ? `Kết quả cho "${searchQuery}"`
+              : selectedIngredients.length > 0
+              ? "Gợi ý món ăn có nguyên liệu trong tủ lạnh"
+              : "Thịnh hành hôm nay"}
           </h2>
 
           <span className="results-count-badge">{totalCount} món ăn</span>
@@ -381,16 +372,20 @@ export const HomePage: React.FC = () => {
         ) : recipes.length === 0 ? (
           <div className="empty-card">
             <span className="empty-icon">
-              {activeTab === "saved" ? "🔖" : "🥣"}
+              {activeTab === "saved" ? "🔖" : activeTab === "fridge" ? "🧊" : "🥣"}
             </span>
             <h3>
               {activeTab === "saved"
                 ? "Bạn chưa lưu công thức món ăn nào!"
+                : activeTab === "fridge" && selectedIngredients.length === 0
+                ? "Tủ lạnh của bạn đang trống!"
                 : "Rất tiếc, chưa tìm thấy món ăn phù hợp!"}
             </h3>
             <p>
               {activeTab === "saved"
                 ? "Hãy bấm biểu tượng Bookmark trên các món ăn để lưu lại nấu sau nhé."
+                : activeTab === "fridge" && selectedIngredients.length === 0
+                ? "Hãy nhập tên nguyên liệu bằng thanh tìm kiếm ở trên hoặc bấm các nút '+ Nguyên liệu' để tủ lạnh tự động gợi ý món nhé."
                 : "Thử nhập thêm nguyên liệu khác hoặc đổi tên món ăn để khám phá thêm."}
             </p>
           </div>

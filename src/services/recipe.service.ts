@@ -319,4 +319,36 @@ export const recipeService = {
       return { id };
     });
   },
+
+  async saveRecipe(userId: string, recipeId: string) {
+    const existing = await prisma.userRecipe.findUnique({
+      where: {
+        userId_recipeId: { userId, recipeId },
+      },
+    });
+    if (existing) return existing;
+    return prisma.userRecipe.create({
+      data: { userId, recipeId },
+    });
+  },
+
+  async unsaveRecipe(userId: string, recipeId: string) {
+    return prisma.userRecipe.deleteMany({
+      where: { userId, recipeId },
+    });
+  },
+
+  async getSavedRecipes(userId: string) {
+    const saved = await prisma.userRecipe.findMany({
+      where: { userId },
+      include: {
+        recipe: {
+          include: recipeDetailInclude,
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return saved.map((s) => formatRecipe(s.recipe));
+  },
 };

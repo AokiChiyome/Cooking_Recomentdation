@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Sparkles, Search, Utensils, Dices, Plus } from "lucide-react";
 
 interface HeroSectionProps {
@@ -7,20 +7,8 @@ interface HeroSectionProps {
   onAddIngredient: (ing: string) => void;
   onTriggerSearch: () => void;
   onSuggestRandom: () => void;
+  suggestedIngredients?: string[];
 }
-
-const SUGGESTED_INGREDIENTS = [
-  "thịt bò",
-  "thịt heo",
-  "thịt gà",
-  "trứng",
-  "cà chua",
-  "hành tây",
-  "tỏi",
-  "khoai tây",
-  "rau muống",
-  "tôm",
-];
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   searchQuery,
@@ -28,8 +16,26 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onAddIngredient,
   onTriggerSearch,
   onSuggestRandom,
+  suggestedIngredients = ["thịt bò", "thịt heo", "thịt gà", "trứng", "cà chua", "hành tây", "tỏi", "tôm"],
 }) => {
+  const [localSearch, setLocalSearch] = useState(searchQuery);
   const [ingInput, setIngInput] = useState("");
+
+  // Keep localSearch synced if searchQuery changes externally (e.g. clear)
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  // Debounce search query update (400ms delay) to prevent spamming 31 API calls
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (localSearch !== searchQuery) {
+        setSearchQuery(localSearch);
+      }
+    }, 400);
+
+    return () => clearTimeout(handler);
+  }, [localSearch, searchQuery, setSearchQuery]);
 
   const handleAdd = () => {
     if (ingInput.trim()) {
@@ -38,11 +44,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     }
   };
 
+  const handleMainSearch = () => {
+    setSearchQuery(localSearch);
+    onTriggerSearch();
+  };
+
   return (
     <section className="hero-section">
       <div className="hero-top-bar" />
 
-      {/* Floating food animations (4 food items cleanly placed) */}
+      {/* Floating food animations */}
       <span className="floating-food food-1">🍳</span>
       <span className="floating-food food-2">🥦</span>
       <span className="floating-food food-3">🥩</span>
@@ -75,9 +86,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 id="recipeNameInput"
                 className="search-input"
                 placeholder="VD: Phở bò, Sườn xào chua ngọt..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onTriggerSearch()}
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleMainSearch()}
               />
             </div>
           </div>
@@ -109,19 +120,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Hero Actions Button */}
         <div className="hero-actions">
-          <button className="btn-search-main-home" onClick={onTriggerSearch}>
+          <button className="btn-search-main-home" onClick={handleMainSearch}>
             <Search size={20} /> TÌM MÓN ĂN PHÙ HỢP
           </button>
         </div>
 
-        {/* Quick Suggestions */}
+        {/* Quick Suggestions from DB */}
         <div className="quick-suggestions">
-          <span className="suggestion-label">Gợi ý nhanh:</span>
+          <span className="suggestion-label">Gợi ý phổ biến:</span>
           <button className="chip-btn btn-random" onClick={onSuggestRandom}>
             <Dices size={15} /> Gợi ý ngẫu nhiên
           </button>
 
-          {SUGGESTED_INGREDIENTS.slice(0, 6).map((ing) => (
+          {suggestedIngredients.slice(0, 8).map((ing) => (
             <button
               key={ing}
               className="chip-btn"
