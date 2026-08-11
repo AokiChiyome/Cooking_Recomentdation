@@ -1,15 +1,5 @@
 import { prisma } from "../config/prisma";
 
-function startOfDay(d: Date) {
-  const copy = new Date(d);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
-}
-
-function toDateKey(d: Date) {
-  return d.toISOString().slice(0, 10); // YYYY-MM-DD
-}
-
 function mapDifficulty(value: string) {
   switch (value) {
     case "0":
@@ -23,15 +13,26 @@ function mapDifficulty(value: string) {
   }
 }
 
+function startOfDay(d: Date) {
+  const copy = new Date(d);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function toDateKey(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
 /**
- * Gom danh sách timestamp thành các bucket theo ngày, đủ N ngày gần nhất
- * (kể cả ngày không có dữ liệu = 0), dùng cho biểu đồ trend.
+ * Gom danh sách timestamp thành các bucket theo ngày,
+ * đủ N ngày gần nhất (kể cả ngày không có dữ liệu = 0).
  */
 function bucketByDay(timestamps: Date[], days: number) {
   const since = startOfDay(new Date());
   since.setDate(since.getDate() - (days - 1));
 
   const buckets = new Map<string, number>();
+
   for (let i = 0; i < days; i++) {
     const d = new Date(since);
     d.setDate(d.getDate() + i);
@@ -40,6 +41,7 @@ function bucketByDay(timestamps: Date[], days: number) {
 
   for (const ts of timestamps) {
     const key = toDateKey(ts);
+
     if (buckets.has(key)) {
       buckets.set(key, (buckets.get(key) as number) + 1);
     }
@@ -52,7 +54,9 @@ function bucketByDay(timestamps: Date[], days: number) {
 }
 
 export const dashboardService = {
-  // Số liệu tổng quan hiển thị dạng "card" trên dashboard
+  /**
+   * Số liệu tổng quan hiển thị dạng card trên dashboard
+   */
   async getOverview() {
     const [
       totalRecipes,
@@ -65,12 +69,23 @@ export const dashboardService = {
       totalCategories,
     ] = await Promise.all([
       prisma.recipe.count(),
+
       prisma.ingredient.count(),
+
       prisma.user.count(),
+
       prisma.category.count(),
+
       prisma.recipeCategory.count(),
+
       prisma.unit.count(),
-      prisma.recipe.aggregate({ _avg: { cookTime: true } }),
+
+      prisma.recipe.aggregate({
+        _avg: {
+          cookTime: true,
+        },
+      }),
+
       prisma.category.count(),
     ]);
 
@@ -88,13 +103,18 @@ export const dashboardService = {
     };
   },
 
-  // Số lượng công thức theo từng mức độ khó (cho pie/bar chart)
-
+  /**
+   * Số lượng công thức theo từng mức độ khó
+   */
   async recipesByDifficulty() {
     const rows = await prisma.recipe.groupBy({
       by: ["difficulty"],
-      _count: { _all: true },
-      orderBy: { difficulty: "asc" },
+      _count: {
+        _all: true,
+      },
+      orderBy: {
+        difficulty: "asc",
+      },
     });
 
     return rows.map((r: any) => ({
@@ -103,7 +123,9 @@ export const dashboardService = {
     }));
   },
 
-  // Top N danh mục công thức có nhiều recipe nhất
+  /**
+   * Top N danh mục công thức có nhiều recipe nhất
+   */
   async recipesByCategory(limit = 10) {
     const grouped = await prisma.recipeCategory.groupBy({
       by: ["categoryId"],
@@ -143,21 +165,37 @@ export const dashboardService = {
     }));
   },
 
-  // Top N nguyên liệu được dùng trong nhiều công thức nhất
+  /**
+   * Top N nguyên liệu được dùng trong nhiều công thức nhất
+   */
   async topIngredients(limit = 10) {
     const grouped = await prisma.recipeIngredient.groupBy({
       by: ["ingredientId"],
-      _count: { _all: true },
-      orderBy: { _count: { ingredientId: "desc" } },
+      _count: {
+        _all: true,
+      },
+      orderBy: {
+        _count: {
+          ingredientId: "desc",
+        },
+      },
       take: limit,
     });
 
     if (grouped.length === 0) return [];
 
     const ingredients = await prisma.ingredient.findMany({
-      where: { ingredientId: { in: grouped.map((g: any) => g.ingredientId) } },
-      select: { ingredientId: true, ingredientName: true },
+      where: {
+        ingredientId: {
+          in: grouped.map((g: any) => g.ingredientId),
+        },
+      },
+      select: {
+        ingredientId: true,
+        ingredientName: true,
+      },
     });
+
     const nameMap = new Map(
       ingredients.map((i: any) => [i.ingredientId, i.ingredientName]),
     );
@@ -169,7 +207,9 @@ export const dashboardService = {
     }));
   },
 
-  // Phân bố công thức theo khoảng thời gian nấu (cho bar chart)
+  /**
+   * Phân bố công thức theo khoảng thời gian nấu
+   */
   async cookTimeDistribution() {
     const [under30, from31to60, from61to120, over120] = await Promise.all([
       prisma.recipe.count({
@@ -209,21 +249,42 @@ export const dashboardService = {
     ]);
 
     return [
-      { label: "0-30 phút", count: under30 },
-      { label: "31-60 phút", count: from31to60 },
-      { label: "61-120 phút", count: from61to120 },
-      { label: "Trên 120 phút", count: over120 },
+      {
+        label: "0-30 phút",
+        count: under30,
+      },
+      {
+        label: "31-60 phút",
+        count: from31to60,
+      },
+      {
+        label: "61-120 phút",
+        count: from61to120,
+      },
+      {
+        label: "Trên 120 phút",
+        count: over120,
+      },
     ];
   },
 
-  // Số công thức được tạo mới theo từng ngày, N ngày gần nhất (line chart)
+  /**
+   * Số công thức được tạo mới theo từng ngày,
+   * N ngày gần nhất
+   */
   async recipesTrend(days = 30) {
     const since = startOfDay(new Date());
     since.setDate(since.getDate() - (days - 1));
 
     const recipes = await prisma.recipe.findMany({
-      where: { createdAt: { gte: since } },
-      select: { createdAt: true },
+      where: {
+        createdAt: {
+          gte: since,
+        },
+      },
+      select: {
+        createdAt: true,
+      },
     });
 
     return bucketByDay(
@@ -232,14 +293,23 @@ export const dashboardService = {
     );
   },
 
-  // Số user đăng ký mới theo từng ngày, N ngày gần nhất (line chart)
+  /**
+   * Số user đăng ký mới theo từng ngày,
+   * N ngày gần nhất
+   */
   async usersTrend(days = 30) {
     const since = startOfDay(new Date());
     since.setDate(since.getDate() - (days - 1));
 
     const users = await prisma.user.findMany({
-      where: { createdAt: { gte: since } },
-      select: { createdAt: true },
+      where: {
+        createdAt: {
+          gte: since,
+        },
+      },
+      select: {
+        createdAt: true,
+      },
     });
 
     return bucketByDay(
@@ -248,11 +318,17 @@ export const dashboardService = {
     );
   },
 
-  // Danh sách công thức mới tạo gần đây (bảng "Recent activity")
+  /**
+   * Danh sách công thức mới tạo gần đây
+   */
   async recentRecipes(limit = 10) {
     return prisma.recipe.findMany({
       take: limit,
-      orderBy: { createdAt: "desc" },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+
       select: {
         recipeId: true,
         recipeName: true,
@@ -260,18 +336,29 @@ export const dashboardService = {
         cookTime: true,
         difficulty: true,
         createdAt: true,
+
         createdByUser: {
-          select: { userId: true, firstName: true, lastName: true },
+          select: {
+            userId: true,
+            firstName: true,
+            lastName: true,
+          },
         },
       },
     });
   },
 
-  // Danh sách user mới đăng ký gần đây
+  /**
+   * Danh sách user mới đăng ký gần đây
+   */
   async recentUsers(limit = 10) {
     return prisma.user.findMany({
       take: limit,
-      orderBy: { createdAt: "desc" },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+
       select: {
         userId: true,
         firstName: true,

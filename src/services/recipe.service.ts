@@ -80,7 +80,10 @@ export const recipeService = {
     const { skip, take, page, limit } = getPagination(query);
 
     const ingList = query.ingredients
-      ? (Array.isArray(query.ingredients) ? query.ingredients : [query.ingredients]).filter((i) => i && i.trim())
+      ? (Array.isArray(query.ingredients)
+          ? query.ingredients
+          : [query.ingredients]
+        ).filter((i) => i && i.trim())
       : [];
 
     const where: Prisma.RecipeWhereInput = {
@@ -91,7 +94,10 @@ export const recipeService = {
             ingredients: {
               some: {
                 ingredient: {
-                  ingredientName: { contains: query.search, mode: "insensitive" },
+                  ingredientName: {
+                    contains: query.search,
+                    mode: "insensitive",
+                  },
                 },
               },
             },
@@ -137,13 +143,17 @@ export const recipeService = {
       hinh_anh: r.hinh_anh,
       cookTime: r.cookTime,
       difficulty: r.difficulty,
-      categories: r.recipeCategories ? r.recipeCategories.map((rc: any) => rc.category) : [],
-      ingredients: r.ingredients ? r.ingredients.map((ri: any) => ({
-        ingredientId: ri.ingredientId,
-        ingredientName: ri.ingredient?.ingredientName,
-        quantity: ri.quantity,
-        unit: ri.unit,
-      })) : [],
+      categories: r.recipeCategories
+        ? r.recipeCategories.map((rc: any) => rc.category)
+        : [],
+      ingredients: r.ingredients
+        ? r.ingredients.map((ri: any) => ({
+            ingredientId: ri.ingredientId,
+            ingredientName: ri.ingredient?.ingredientName,
+            quantity: ri.quantity,
+            unit: ri.unit,
+          }))
+        : [],
       createdAt: r.createdAt,
     }));
 

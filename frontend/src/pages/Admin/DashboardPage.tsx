@@ -260,7 +260,7 @@ export const DashboardPage: React.FC = () => {
                   >
                     <BarChart
                       data={data.recipesByCategory.map((c) => ({
-                        name: c.recipeCategoryName,
+                        name: c.categoryName,
                         count: c.recipeCount,
                       }))}
                       layout="vertical"

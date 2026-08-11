@@ -39,17 +39,30 @@ export interface RecipeStepItem {
 export interface Recipe {
   recipeId: string;
   recipeName: string;
-  recipeImage?: string;
-  recipeDescription?: string;
-  khauPhan?: string;
+
+  // Backend admin recipes
+  hinh_anh?: string;
   cookTime: number;
   difficulty?: string;
+  createdAt?: string;
+
+  // Các field dùng ở những màn hình khác
+  recipeDescription?: string;
+  khauPhan?: string;
   ingredients?: RecipeIngredientItem[];
   steps?: RecipeStepItem[];
+
   matchPercentage?: number;
   matchedCount?: number;
   missingCount?: number;
   isFullyMatched?: boolean;
+
+  // Người tạo recipe
+  createdByUser?: {
+    userId: string;
+    firstName?: string;
+    lastName?: string;
+  };
 }
 
 export interface Pagination {

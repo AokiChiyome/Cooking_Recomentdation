@@ -45,8 +45,6 @@ export const AdminPage: React.FC = () => {
       return;
     }
 
-    console.log("user:", currentUser);
-
     if (
       !currentUser ||
       !currentUser.role?.some((role) => role.roleName === "admin")
@@ -65,8 +63,8 @@ export const AdminPage: React.FC = () => {
     try {
       const res = await fetchWithAuth("/api/admin/stats");
       const json = await res.json();
-      if (json.success && json.data) {
-        setStats(json.data);
+      if (json && typeof json.totalRecipes === "number") {
+        setStats(json);
       }
     } catch (err) {
       console.error("Load admin stats error:", err);
@@ -80,13 +78,18 @@ export const AdminPage: React.FC = () => {
       const res = await fetchWithAuth(url);
       const json = await res.json();
 
-      if (json.success && json.data) {
-        setRecipes(json.data.items || []);
-        setPage(json.data.pagination.page);
-        setTotalPages(json.data.pagination.totalPages);
+      if (Array.isArray(json.data)) {
+        setRecipes(json.data);
+        setPage(json.pagination?.page ?? p);
+        setTotalPages(json.pagination?.totalPages ?? 1);
+      } else {
+        setRecipes([]);
+        setTotalPages(1);
       }
     } catch (err) {
       console.error("Load admin recipes error:", err);
+      setRecipes([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -170,6 +173,14 @@ export const AdminPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadAdminRecipes(1, searchQ);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQ]);
+
   return (
     <div className="admin-page-react">
       {/* Admin Navbar */}
@@ -252,17 +263,16 @@ export const AdminPage: React.FC = () => {
         <section className="admin-panel-card">
           <div className="panel-header">
             <h2 className="panel-title">Danh sách công thức món ăn</h2>
+
             <div className="admin-table-search">
               <input
                 type="text"
                 className="admin-search-input"
                 placeholder="Tìm theo tên món ăn..."
                 value={searchQ}
-                onChange={(e) => {
-                  setSearchQ(e.target.value);
-                  loadAdminRecipes(1, e.target.value);
-                }}
+                onChange={(e) => setSearchQ(e.target.value)}
               />
+
               <button
                 className="btn-create-recipe"
                 onClick={() => setShowAddModal(true)}
@@ -281,8 +291,8 @@ export const AdminPage: React.FC = () => {
                   <th>Hình ảnh</th>
                   <th>Tên Món Ăn</th>
                   <th>Thời gian</th>
-                  <th>Khẩu phần</th>
-                  <th>Số nguyên liệu</th>
+                  <th>Độ khó</th>
+                  <th>Người tạo</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
@@ -305,36 +315,51 @@ export const AdminPage: React.FC = () => {
                       <td>
                         <img
                           src={
-                            recipe.recipeImage ||
+                            recipe.hinh_anh ||
                             "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100"
                           }
                           className="recipe-thumb"
                           alt={recipe.recipeName}
                         />
                       </td>
+
                       <td>
                         <strong>{recipe.recipeName}</strong>
+
                         <div className="recipe-id-caption">
                           ID: {recipe.recipeId}
                         </div>
                       </td>
+
                       <td>
                         <span className="table-inline-icon">
-                          <Clock size={13} /> {recipe.cookTime || 15} phút
+                          <Clock size={13} />
+                          {recipe.cookTime ?? 0} phút
                         </span>
                       </td>
+
                       <td>
                         <span className="table-inline-icon">
-                          <UtensilsCrossed size={13} />{" "}
-                          {recipe.khauPhan || "2 người"}
+                          <ShieldCheck size={13} />
+                          {recipe.difficulty === "EASY"
+                            ? "Dễ"
+                            : recipe.difficulty === "MEDIUM"
+                              ? "Trung bình"
+                              : recipe.difficulty === "HARD"
+                                ? "Khó"
+                                : "Không xác định"}
                         </span>
                       </td>
+
                       <td>
                         <span className="table-inline-icon">
-                          <Leaf size={13} />{" "}
-                          {(recipe.ingredients || []).length} nguyên liệu
+                          <Users size={13} />
+                          {recipe.createdByUser
+                            ? `${recipe.createdByUser.firstName} ${recipe.createdByUser.lastName}`
+                            : "Không xác định"}
                         </span>
                       </td>
+
                       <td>
                         <button
                           className="btn-action btn-action-delete"

@@ -16,8 +16,8 @@ export interface RecipesByDifficultyItem {
 }
 
 export interface RecipesByCategoryItem {
-  recipeCategoryId: string;
-  recipeCategoryName: string;
+  categoryId: string;
+  categoryName: string;
   recipeCount: number;
 }
 

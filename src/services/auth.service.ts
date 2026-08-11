@@ -28,32 +28,6 @@ function msFromExpiresIn(expiresIn: string): number {
 }
 
 export const authService = {
-  // async register(input: RegisterInput) {
-  //   const existing = await prisma.user.findUnique({
-  //     where: { email: input.email },
-  //   });
-  //   if (existing) {
-  //     throw ApiError.conflict("Email đã được đăng ký");
-  //   }
-
-  //   const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
-
-  //   const newUserId = randomUUID();
-
-  //   const user = await prisma.user.create({
-  //     data: {
-  //       userId: newUserId,
-  //       email: input.email,
-  //       firstName: input.firstName,
-  //       lastName: input.lastName,
-  //       password: passwordHash,
-  //       createdBy: newUserId,
-  //       updatedBy: newUserId,
-  //     },
-  //   });
-
-  //   return authService.issueTokens(user.userId, user.email);
-  // },
   async register(input: RegisterInput) {
     const existing = await prisma.user.findUnique({
       where: { email: input.email },
