@@ -27,6 +27,8 @@ function formatRecipe(recipe: any) {
   const { recipeCategories, ingredients, ...rest } = recipe;
   return {
     ...rest,
+    recipeImage: recipe.recipeImage || recipe.hinh_anh,
+    khauPhan: recipe.khau_phan || recipe.khauPhan || "2 người",
     ingredients: ingredients?.map((ri: any) => ({
       ingredientId: ri.ingredientId,
       ingredientName: ri.ingredient?.ingredientName,
@@ -125,6 +127,7 @@ export const recipeService = {
         include: {
           recipeCategories: { include: { category: true } },
           ingredients: { include: { ingredient: true, unit: true } },
+          steps: { orderBy: { stepNumber: "asc" } },
         },
       }),
       prisma.recipe.count({ where }),
@@ -133,9 +136,11 @@ export const recipeService = {
     const formatted = items.map((r: any) => ({
       recipeId: r.recipeId,
       recipeName: r.recipeName,
+      recipeDescription: r.recipeDescription,
       recipeImage: r.hinh_anh || r.recipeImage,
       hinh_anh: r.hinh_anh,
       cookTime: r.cookTime,
+      khauPhan: r.khau_phan || r.khauPhan || "2 người",
       difficulty: r.difficulty,
       categories: r.recipeCategories ? r.recipeCategories.map((rc: any) => rc.category) : [],
       ingredients: r.ingredients ? r.ingredients.map((ri: any) => ({
@@ -143,6 +148,10 @@ export const recipeService = {
         ingredientName: ri.ingredient?.ingredientName,
         quantity: ri.quantity,
         unit: ri.unit,
+      })) : [],
+      steps: r.steps ? r.steps.map((s: any) => ({
+        stepNumber: s.stepNumber,
+        description: s.description,
       })) : [],
       createdAt: r.createdAt,
     }));

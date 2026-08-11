@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { fetchWithAuth } from "../../services/api";
+import { isAdminUser } from "../../types";
 
 import {
   Cell,
@@ -50,10 +51,7 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     if (authLoading) return;
 
-    if (
-      !currentUser ||
-      !currentUser.role?.some((role) => role.roleName === "admin")
-    ) {
+    if (!isAdminUser(currentUser)) {
       showToast("🔒 Bạn không có quyền Admin để truy cập trang này!", "error");
       navigate("/");
       return;

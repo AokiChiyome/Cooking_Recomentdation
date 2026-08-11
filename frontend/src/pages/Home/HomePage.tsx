@@ -159,6 +159,9 @@ export const HomePage: React.FC = () => {
         const res = await fetchWithAuth("/api/recipes/saved");
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
+          const ids = json.data.map((r: any) => r.recipeId);
+          const savedKey = `saved_recipes_${currentUser.userId}`;
+          localStorage.setItem(savedKey, JSON.stringify(ids));
           return json.data.map((r: any) => ({
             ...r,
             recipeImage: r.recipeImage || r.hinh_anh,
@@ -170,7 +173,30 @@ export const HomePage: React.FC = () => {
       }
       return [];
     },
-    enabled: activeTab === "saved" && !!currentUser,
+    enabled: !!currentUser,
+  });
+
+  // 5. Fetch user fridge ingredients directly from CockroachDB user_ingredients table
+  useQuery({
+    queryKey: ["userIngredients", currentUser?.userId],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      try {
+        const res = await fetchWithAuth("/api/user-ingredients");
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          const names = json.data.map((item: any) => item.ingredient?.ingredientName).filter(Boolean);
+          if (names.length > 0) {
+            setSelectedIngredients(names);
+          }
+          return names;
+        }
+      } catch (err) {
+        console.error("Fetch user ingredients DB error:", err);
+      }
+      return [];
+    },
+    enabled: !!currentUser,
   });
 
   // Decide current active recipe list & loading state
@@ -186,17 +212,37 @@ export const HomePage: React.FC = () => {
     if (cleanIng && !selectedIngredients.includes(cleanIng)) {
       setSelectedIngredients((prev) => [...prev, cleanIng]);
       setPage(1);
+
+      if (currentUser) {
+        fetchWithAuth("/api/user-ingredients/by-name", {
+          method: "POST",
+          body: JSON.stringify({ name: cleanIng }),
+        }).catch((err) => console.error("Sync add ingredient DB error:", err));
+      }
     }
   };
 
   const handleRemoveIngredient = (ing: string) => {
     setSelectedIngredients((prev) => prev.filter((item) => item !== ing));
     setPage(1);
+
+    if (currentUser) {
+      fetchWithAuth("/api/user-ingredients/by-name", {
+        method: "DELETE",
+        body: JSON.stringify({ name: ing }),
+      }).catch((err) => console.error("Sync remove ingredient DB error:", err));
+    }
   };
 
   const handleClearAllIngredients = () => {
     setSelectedIngredients([]);
     setPage(1);
+
+    if (currentUser) {
+      fetchWithAuth("/api/user-ingredients/clear-all", {
+        method: "DELETE",
+      }).catch((err) => console.error("Sync clear ingredients DB error:", err));
+    }
   };
 
   const handleSuggestRandom = () => {
@@ -204,8 +250,18 @@ export const HomePage: React.FC = () => {
       ? suggestedIngredients
       : ["thịt bò", "thịt heo", "thịt gà", "trứng", "cà chua", "tỏi", "tôm"];
     const shuffled = [...list].sort(() => 0.5 - Math.random());
-    setSelectedIngredients(shuffled.slice(0, 3));
+    const randomSelected = shuffled.slice(0, 3);
+    setSelectedIngredients(randomSelected);
     setPage(1);
+
+    if (currentUser) {
+      randomSelected.forEach((ing) => {
+        fetchWithAuth("/api/user-ingredients/by-name", {
+          method: "POST",
+          body: JSON.stringify({ name: ing }),
+        }).catch((err) => console.error("Sync suggest ingredient DB error:", err));
+      });
+    }
   };
 
   const handleTabChange = (tab: "fridge" | "all" | "saved") => {
@@ -399,11 +455,9 @@ export const HomePage: React.FC = () => {
                 onOpenDetail={handleOpenDetail}
                 isSaved={activeTab === "saved"}
                 onToggleSaveSuccess={() => {
-                  if (activeTab === "saved") {
-                    queryClient.invalidateQueries({
-                      queryKey: ["savedRecipes"],
-                    });
-                  }
+                  queryClient.invalidateQueries({
+                    queryKey: ["savedRecipes"],
+                  });
                 }}
               />
             ))}

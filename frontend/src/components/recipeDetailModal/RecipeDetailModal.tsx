@@ -133,13 +133,13 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
         {/* Body */}
         <div className="recipe-modal-body">
           {/* Description */}
-          {recipe.recipeDescription && (
+          {(recipe.recipeDescription || (recipe as any).description) && (
             <section className="recipe-description">
               <div className="recipe-section-icon">💡</div>
 
               <div>
-                <h3>Giới thiệu</h3>
-                <p>{recipe.recipeDescription}</p>
+                <h3>Giới thiệu món ăn</h3>
+                <p>{recipe.recipeDescription || (recipe as any).description}</p>
               </div>
             </section>
           )}
@@ -165,7 +165,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               <div className="recipe-ingredients">
                 {recipe.ingredients!.map((ingObj, idx) => {
                   const ingName =
-                    ingObj.ingredient?.ingredientName || "Nguyên liệu";
+                    ingObj.ingredientName ||
+                    ingObj.ingredient?.ingredientName ||
+                    "Nguyên liệu";
 
                   const qty = ingObj.quantity
                     ? `${ingObj.quantity}${

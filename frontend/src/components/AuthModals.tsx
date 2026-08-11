@@ -213,7 +213,15 @@ export const AuthModals: React.FC = () => {
           <div
             className="modal-card auth-modal-card"
             onClick={(e) => e.stopPropagation()}
-            style={{ padding: "2rem" }}
+            style={{
+              padding: "2.25rem 2rem 2rem",
+              maxWidth: 440,
+              width: "100%",
+              borderRadius: 24,
+              border: "1px solid rgba(226, 232, 240, 0.8)",
+              boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)",
+              background: "#ffffff",
+            }}
           >
             <button
               className="btn-close-modal"
@@ -229,19 +237,30 @@ export const AuthModals: React.FC = () => {
             >
               <div
                 className="profile-avatar-lg"
-                style={{ margin: "0 auto 1rem" }}
+                style={{
+                  margin: "0 auto 1rem",
+                  width: 88,
+                  height: 88,
+                  borderRadius: "50%",
+                  border: "3px solid #ea580c",
+                  padding: 3,
+                  boxShadow: "0 8px 20px rgba(234, 88, 12, 0.2)",
+                  background: "#fff",
+                }}
               >
                 <img
                   src={`https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(currentUser.email)}`}
                   alt="Avatar"
+                  style={{ width: "100%", height: "100%", borderRadius: "50%" }}
                 />
               </div>
               <h3
                 style={{
-                  fontSize: "1.4rem",
+                  fontSize: "1.45rem",
                   fontWeight: 700,
                   color: "#0f172a",
                   margin: 0,
+                  letterSpacing: "-0.02em",
                 }}
               >
                 {currentUser.lastName ? `${currentUser.lastName} ` : ""}
@@ -250,13 +269,40 @@ export const AuthModals: React.FC = () => {
               <p
                 className="profile-email"
                 style={{
-                  color: "#64748b",
+                  color: "#475569",
                   fontSize: "0.92rem",
                   marginTop: "0.25rem",
+                  fontWeight: 500,
                 }}
               >
                 {currentUser.email}
               </p>
+
+              {/* Role badge */}
+              <div style={{ marginTop: "0.6rem" }}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    padding: "3px 12px",
+                    borderRadius: 50,
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    background:
+                      typeof currentUser.role === "string" &&
+                      currentUser.role.toUpperCase() === "ADMIN"
+                        ? "linear-gradient(135deg, #ea580c, #c2410c)"
+                        : "linear-gradient(135deg, #10b981, #059669)",
+                    color: "#ffffff",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                  }}
+                >
+                  {typeof currentUser.role === "string"
+                    ? currentUser.role.toUpperCase()
+                    : "USER"}
+                </span>
+              </div>
             </div>
 
             <div
@@ -264,7 +310,7 @@ export const AuthModals: React.FC = () => {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "0.75rem",
+                gap: "0.85rem",
                 marginBottom: "1.75rem",
               }}
             >
@@ -274,10 +320,10 @@ export const AuthModals: React.FC = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "0.75rem 1rem",
+                  padding: "0.85rem 1.1rem",
                   backgroundColor: "#f8fafc",
-                  borderRadius: "0.75rem",
-                  border: "1px solid #f1f5f9",
+                  borderRadius: "0.9rem",
+                  border: "1px solid #e2e8f0",
                 }}
               >
                 <span
@@ -285,20 +331,20 @@ export const AuthModals: React.FC = () => {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "0.5rem",
-                    color: "#64748b",
+                    gap: "0.55rem",
+                    color: "#475569",
                     fontSize: "0.9rem",
-                    fontWeight: 500,
+                    fontWeight: 600,
                   }}
                 >
-                  <UserIcon size={16} /> Họ và tên:
+                  <UserIcon size={17} style={{ color: "#ea580c" }} /> Họ và tên:
                 </span>
                 <span
                   className="detail-value"
                   style={{
-                    fontWeight: 600,
+                    fontWeight: 700,
                     color: "#0f172a",
-                    fontSize: "0.92rem",
+                    fontSize: "0.95rem",
                   }}
                 >
                   {currentUser.lastName ? `${currentUser.lastName} ` : ""}
@@ -312,10 +358,10 @@ export const AuthModals: React.FC = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "0.75rem 1rem",
+                  padding: "0.85rem 1.1rem",
                   backgroundColor: "#f8fafc",
-                  borderRadius: "0.75rem",
-                  border: "1px solid #f1f5f9",
+                  borderRadius: "0.9rem",
+                  border: "1px solid #e2e8f0",
                 }}
               >
                 <span
@@ -323,20 +369,20 @@ export const AuthModals: React.FC = () => {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "0.5rem",
-                    color: "#64748b",
+                    gap: "0.55rem",
+                    color: "#475569",
                     fontSize: "0.9rem",
-                    fontWeight: 500,
+                    fontWeight: 600,
                   }}
                 >
-                  <Mail size={16} /> Email:
+                  <Mail size={17} style={{ color: "#ea580c" }} /> Email:
                 </span>
                 <span
                   className="detail-value"
                   style={{
-                    fontWeight: 600,
+                    fontWeight: 700,
                     color: "#0f172a",
-                    fontSize: "0.92rem",
+                    fontSize: "0.95rem",
                   }}
                 >
                   {currentUser.email}
@@ -360,13 +406,12 @@ export const AuthModals: React.FC = () => {
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "0.4rem",
-                  padding: "0.65rem 1.4rem",
-                  borderRadius: "0.75rem",
+                  padding: "0.7rem 1.4rem",
+                  borderRadius: "0.8rem",
                   border: "1px solid #cbd5e1",
-                  backgroundColor: "#f8fafc",
+                  backgroundColor: "#ffffff",
                   color: "#334155",
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: "0.92rem",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
@@ -383,17 +428,17 @@ export const AuthModals: React.FC = () => {
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "0.4rem",
-                  padding: "0.65rem 1.4rem",
-                  borderRadius: "0.75rem",
+                  gap: "0.45rem",
+                  padding: "0.7rem 1.4rem",
+                  borderRadius: "0.8rem",
                   border: "1px solid #fecaca",
                   backgroundColor: "#fef2f2",
                   color: "#dc2626",
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: "0.92rem",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
-                  boxShadow: "0 2px 6px rgba(220, 38, 38, 0.08)",
+                  boxShadow: "0 2px 8px rgba(220, 38, 38, 0.1)",
                 }}
               >
                 <LogOut size={17} /> Đăng xuất

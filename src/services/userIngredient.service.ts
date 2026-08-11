@@ -91,4 +91,51 @@ export const userIngredientService = {
       return { ingredientId };
     });
   },
+
+  async addByName(userId: string, ingredientName: string) {
+    const nameClean = ingredientName.trim().toLowerCase();
+    if (!nameClean) return null;
+
+    let ingredient = await prisma.ingredient.findFirst({
+      where: { ingredientName: { equals: nameClean, mode: "insensitive" } },
+    });
+
+    if (!ingredient) {
+      ingredient = await prisma.ingredient.create({
+        data: {
+          ingredientName: ingredientName.trim(),
+          createdBy: userId,
+          updatedBy: userId,
+        },
+      });
+    }
+
+    return prisma.userIngredient.upsert({
+      where: { userId_ingredientId: { userId, ingredientId: ingredient.ingredientId } },
+      create: {
+        userId,
+        ingredientId: ingredient.ingredientId,
+      },
+      update: {},
+      include: { ingredient: true },
+    });
+  },
+
+  async removeByName(userId: string, ingredientName: string) {
+    const ingredient = await prisma.ingredient.findFirst({
+      where: { ingredientName: { equals: ingredientName.trim(), mode: "insensitive" } },
+    });
+
+    if (!ingredient) return null;
+
+    return prisma.userIngredient.deleteMany({
+      where: { userId, ingredientId: ingredient.ingredientId },
+    });
+  },
+
+  async clearAll(userId: string) {
+    return prisma.userIngredient.deleteMany({
+      where: { userId },
+    });
+  },
 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChefHat, ChevronDown, User as UserIcon, Bookmark, Shield, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { isAdminUser } from '../types';
 
 interface NavbarProps {
   activeTab: 'fridge' | 'all' | 'saved';
@@ -102,7 +103,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                   <Bookmark size={16} /> Công thức đã lưu
                 </button>
 
-                {currentUser.role === 'ADMIN' && (
+                {isAdminUser(currentUser) && (
                   <Link
                     to="/admin"
                     className="dropdown-item"

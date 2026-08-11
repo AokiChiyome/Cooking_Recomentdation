@@ -37,4 +37,24 @@ export const userIngredientController = {
     await userIngredientService.remove(req.user.userId, req.params.ingredientId);
     res.json({ success: true, message: "Xoá nguyên liệu khỏi kho thành công" });
   }),
+
+  addByName: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized();
+    const { name } = req.body;
+    const item = await userIngredientService.addByName(req.user.userId, name);
+    res.status(201).json({ success: true, message: "Thêm nguyên liệu vào tủ lạnh CSDL thành công", data: item });
+  }),
+
+  removeByName: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized();
+    const { name } = req.body;
+    await userIngredientService.removeByName(req.user.userId, name);
+    res.json({ success: true, message: "Xoá nguyên liệu khỏi tủ lạnh CSDL thành công" });
+  }),
+
+  clearAll: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) throw ApiError.unauthorized();
+    await userIngredientService.clearAll(req.user.userId);
+    res.json({ success: true, message: "Đã dọn dẹp nguyên liệu tủ lạnh trong CSDL" });
+  }),
 };

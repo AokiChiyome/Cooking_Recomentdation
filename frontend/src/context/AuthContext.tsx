@@ -45,6 +45,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
 
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
   const showToast = (
     message: string,
     type: "success" | "error" = "success",
@@ -110,9 +114,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       setTokens(json.data.accessToken, json.data.refreshToken);
+      if (json.data.user && json.data.user.firstName) {
+        setCurrentUser(json.data.user);
+      }
       closeModal();
       await checkAuthStatus();
-      showToast(`🎉 Đăng nhập thành công! Chào mừng trở lại.`, "success");
+      showToast(`🎉 Đăng nhập thành công! Chào mừng ${json.data.user?.firstName || ''} trở lại.`, "success");
       return true;
     } catch (err: any) {
       showToast(err.message || "Đăng nhập thất bại", "error");

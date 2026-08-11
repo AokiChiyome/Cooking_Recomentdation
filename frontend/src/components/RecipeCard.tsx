@@ -3,7 +3,7 @@ import type { Recipe } from '../types';
 import { Clock, Flame, ArrowRight, Bookmark, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchWithAuth } from '../services/api';
-
+import { useQueryClient } from '@tanstack/react-query';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -21,6 +21,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   onToggleSaveSuccess,
 }) => {
   const { currentUser, openModal, showToast } = useAuth();
+  const queryClient = useQueryClient();
+
   const [saved, setSaved] = React.useState<boolean>(() => {
     if (!currentUser) return false;
     const savedKey = `saved_recipes_${currentUser.userId}`;
@@ -46,32 +48,61 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       return;
     }
 
-    const method = saved ? 'DELETE' : 'POST';
+    const previousSavedState = saved;
+    const nextState = !saved;
+
+    // 1. Instant Optimistic UI Update (0ms latency)
+    setSaved(nextState);
+
+    // 2. Update localStorage immediately
+    const savedKey = `saved_recipes_${currentUser.userId}`;
+    const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
+    const updatedIds = nextState
+      ? Array.from(new Set([...savedIds, recipe.recipeId]))
+      : savedIds.filter((id) => id !== recipe.recipeId);
+    localStorage.setItem(savedKey, JSON.stringify(updatedIds));
+
+    // 3. Optimistically update React Query cache to fix N-1 count issue immediately
+    queryClient.setQueryData(["savedRecipes", currentUser.userId], (oldData: any) => {
+      const list = Array.isArray(oldData) ? oldData : [];
+      if (nextState) {
+        if (list.some((r: any) => r.recipeId === recipe.recipeId)) return list;
+        return [recipe, ...list];
+      } else {
+        return list.filter((r: any) => r.recipeId !== recipe.recipeId);
+      }
+    });
+
+    // 4. Instant Toast Notification
+    showToast(
+      nextState ? '⭐ Đã lưu món ăn này' : '🗑️ Đã xóa món ăn khỏi danh sách đã lưu',
+      nextState ? 'success' : 'info'
+    );
+
+    // 5. Background API Sync with CockroachDB & post-write refetch
+    const method = nextState ? 'POST' : 'DELETE';
     try {
       const res = await fetchWithAuth(`/api/recipes/${recipe.recipeId}/save`, { method });
       const json = await res.json();
       if (json.success) {
-        const nextState = !saved;
-        setSaved(nextState);
-
-        const savedKey = `saved_recipes_${currentUser.userId}`;
-        const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
-        const updatedIds = nextState
-          ? [...savedIds.filter((id) => id !== recipe.recipeId), recipe.recipeId]
-          : savedIds.filter((id) => id !== recipe.recipeId);
-        localStorage.setItem(savedKey, JSON.stringify(updatedIds));
-
-        showToast(
-          nextState ? '⭐ Đã lưu món ăn vào CSDL!' : '🗑️ Đã xóa món ăn khỏi danh sách đã lưu.',
-          nextState ? 'success' : 'info'
-        );
-
+        queryClient.invalidateQueries({ queryKey: ["savedRecipes", currentUser.userId] });
         if (onToggleSaveSuccess) {
           onToggleSaveSuccess();
         }
+      } else {
+        // Rollback state if server returns error
+        setSaved(previousSavedState);
+        localStorage.setItem(savedKey, JSON.stringify(savedIds));
+        queryClient.invalidateQueries({ queryKey: ["savedRecipes", currentUser.userId] });
+        showToast(json.message || 'Không thể cập nhật trạng thái lưu món ăn', 'error');
       }
     } catch (err) {
       console.error('Save recipe error:', err);
+      // Rollback state on network error
+      setSaved(previousSavedState);
+      localStorage.setItem(savedKey, JSON.stringify(savedIds));
+      queryClient.invalidateQueries({ queryKey: ["savedRecipes", currentUser.userId] });
+      showToast('Lỗi mạng khi lưu món ăn', 'error');
     }
   };
 
@@ -125,9 +156,16 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           </div>
         </div>
 
-        <p className="recipe-description">
-          {recipe.recipeDescription || 'Chưa có mô tả chi tiết cho món ăn này.'}
-        </p>
+        {(() => {
+          const firstStepDesc = recipe.steps && recipe.steps.length > 0 ? recipe.steps[0].description : '';
+          const rawDesc = recipe.recipeDescription || (recipe as any).description || (firstStepDesc ? `Bước 1: ${firstStepDesc}` : '');
+          const cleanDesc = rawDesc.trim();
+          return (
+            <p className="recipe-description">
+              {cleanDesc || 'Món ăn thơm ngon, dễ làm, phù hợp bữa cơm gia đình.'}
+            </p>
+          );
+        })()}
 
         <div className="ingredients-section">
           <div className="card-ingredients-title">Thành phần nguyên liệu:</div>
@@ -135,13 +173,16 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             {(recipe.ingredients || []).length > 0 ? (
               recipe.ingredients!.map((ingObj, idx) => {
                 const ingName = ingObj.ingredientName || ingObj.ingredient?.ingredientName || 'Nguyên liệu';
+                const cleanIng = ingName.trim().toLowerCase();
                 const isMatched =
                   selectedIngredients.length > 0 &&
-                  selectedIngredients.some(
-                    (selected) =>
-                      ingName.toLowerCase().includes(selected) ||
-                      selected.includes(ingName.toLowerCase())
-                  );
+                  selectedIngredients.some((selected) => {
+                    const cleanSel = selected.trim().toLowerCase();
+                    return (
+                      cleanSel.length > 0 &&
+                      (cleanIng.includes(cleanSel) || cleanSel.includes(cleanIng))
+                    );
+                  });
 
                 return (
                   <span

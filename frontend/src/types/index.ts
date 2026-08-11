@@ -3,7 +3,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName?: string;
-  role: Role[];
+  role?: string | Role[];
   createdAt?: string;
 }
 
@@ -70,4 +70,19 @@ export interface AdminStats {
   totalUsers: number;
   totalIngredients: number;
   totalCategories: number;
+}
+
+export function isAdminUser(user: any): boolean {
+  if (!user || !user.role) return false;
+  if (typeof user.role === "string") {
+    return user.role.toUpperCase() === "ADMIN";
+  }
+  if (Array.isArray(user.role)) {
+    return user.role.some((r: any) =>
+      typeof r === "string"
+        ? r.toUpperCase() === "ADMIN"
+        : (r?.roleName || r?.name || "").toUpperCase() === "ADMIN"
+    );
+  }
+  return false;
 }

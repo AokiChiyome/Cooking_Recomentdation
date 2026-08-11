@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { fetchWithAuth } from "../../services/api";
+import { isAdminUser } from "../../types";
 import type { AdminStats, Recipe } from "../../types";
 
 import {
@@ -45,14 +46,8 @@ export const AdminPage: React.FC = () => {
       return;
     }
 
-    console.log("user:", currentUser);
-
-    if (
-      !currentUser ||
-      !currentUser.role?.some((role) => role.roleName === "admin")
-    ) {
+    if (!isAdminUser(currentUser)) {
       showToast("🔒 Bạn không có quyền Admin để truy cập trang này!", "error");
-
       navigate("/");
       return;
     }
@@ -169,6 +164,161 @@ export const AdminPage: React.FC = () => {
       showToast("Lỗi máy chủ khi thêm món ăn", "error");
     }
   };
+
+  if (authLoading) {
+    return (
+      <div
+        className="admin-page-react"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: "#faf6ee",
+        }}
+      >
+        <p className="dash-loading" style={{ fontSize: 18, color: "#795548" }}>
+          ⏳ Đang kiểm tra quyền Admin...
+        </p>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div
+        className="admin-page-react"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          padding: 24,
+          textAlign: "center",
+          background: "#faf6ee",
+        }}
+      >
+        <div
+          style={{
+            background: "#ffffff",
+            padding: "36px 44px",
+            borderRadius: 24,
+            boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
+            maxWidth: 460,
+            width: "100%",
+          }}
+        >
+          <div style={{ fontSize: 52, marginBottom: 16 }}>🔒</div>
+          <h2
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: "#1e293b",
+              marginBottom: 12,
+            }}
+          >
+            Yêu cầu đăng nhập Quản trị
+          </h2>
+          <p
+            style={{
+              color: "#64748b",
+              fontSize: 14,
+              marginBottom: 24,
+              lineHeight: 1.6,
+            }}
+          >
+            Vui lòng đăng nhập bằng tài khoản Admin (
+            <strong style={{ color: "#ea580c" }}>thientu0900@gmail.com</strong>)
+            để xem trang Quản lý Admin này.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <Link
+              to="/"
+              style={{
+                padding: "11px 22px",
+                borderRadius: 12,
+                background: "#f1f5f9",
+                color: "#475569",
+                textDecoration: "none",
+                fontWeight: 600,
+                fontSize: 14,
+              }}
+            >
+              Về Trang Chủ
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdminUser(currentUser)) {
+    return (
+      <div
+        className="admin-page-react"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          padding: 24,
+          textAlign: "center",
+          background: "#faf6ee",
+        }}
+      >
+        <div
+          style={{
+            background: "#ffffff",
+            padding: "36px 44px",
+            borderRadius: 24,
+            boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
+            maxWidth: 460,
+            width: "100%",
+          }}
+        >
+          <div style={{ fontSize: 52, marginBottom: 16 }}>🚫</div>
+          <h2
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: "#1e293b",
+              marginBottom: 12,
+            }}
+          >
+            Không có quyền truy cập
+          </h2>
+          <p
+            style={{
+              color: "#64748b",
+              fontSize: 14,
+              marginBottom: 24,
+              lineHeight: 1.6,
+            }}
+          >
+            Tài khoản <strong style={{ color: "#0f172a" }}>{currentUser.email}</strong>{" "}
+            hiện tại chỉ có quyền Người dùng, không có quyền Quản trị Admin.
+          </p>
+          <Link
+            to="/"
+            style={{
+              padding: "11px 24px",
+              borderRadius: 12,
+              background: "#ea580c",
+              color: "#fff",
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: 14,
+              display: "inline-block",
+            }}
+          >
+            Quay lại Trang Chủ
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-page-react">

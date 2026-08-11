@@ -13,9 +13,8 @@ import { env } from "../config/env";
 const SALT_ROUNDS = 10;
 
 function msFromExpiresIn(expiresIn: string): number {
-  // hỗ trợ định dạng đơn giản như "15m", "7d", "1h"
   const match = expiresIn.match(/^(\d+)([smhd])$/);
-  if (!match) return 7 * 24 * 60 * 60 * 1000; // default 7d
+  if (!match) return 7 * 24 * 60 * 60 * 1000;
   const value = parseInt(match[1], 10);
   const unit = match[2];
   const unitMs: Record<string, number> = {
@@ -28,55 +27,37 @@ function msFromExpiresIn(expiresIn: string): number {
 }
 
 export const authService = {
-  // async register(input: RegisterInput) {
-  //   const existing = await prisma.user.findUnique({
-  //     where: { email: input.email },
-  //   });
-  //   if (existing) {
-  //     throw ApiError.conflict("Email đã được đăng ký");
-  //   }
-
-  //   const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
-
-  //   const newUserId = randomUUID();
-
-  //   const user = await prisma.user.create({
-  //     data: {
-  //       userId: newUserId,
-  //       email: input.email,
-  //       firstName: input.firstName,
-  //       lastName: input.lastName,
-  //       password: passwordHash,
-  //       createdBy: newUserId,
-  //       updatedBy: newUserId,
-  //     },
-  //   });
-
-  //   return authService.issueTokens(user.userId, user.email);
-  // },
   async register(input: RegisterInput) {
     const existing = await prisma.user.findUnique({
       where: { email: input.email },
     });
 
     if (existing) {
-      throw ApiError.conflict("Email đã được đăng ký");
+      throw ApiError.conflict("Email này đã được đăng ký tài khoản khác");
     }
 
     const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
-
     const newUserId = randomUUID();
 
-    const role = await prisma.role.findUnique({
+    // 1. Tự động tìm hoặc tạo mặc định Role USER trong CSDL CockroachDB
+    let role = await prisma.role.findFirst({
       where: {
-        roleName: "user",
+        roleName: { equals: "USER", mode: "insensitive" },
       },
     });
 
     if (!role) {
-      throw ApiError.internal("Role USER không tồn tại");
+      role = await prisma.role.create({
+        data: {
+          roleId: randomUUID(),
+          roleName: "USER",
+          createdBy: newUserId,
+          updatedBy: newUserId,
+        },
+      });
     }
 
+    // 2. Tạo tài khoản người dùng và tự động kết nối với Role USER mặc định
     const user = await prisma.user.create({
       data: {
         userId: newUserId,
@@ -86,7 +67,6 @@ export const authService = {
         password: passwordHash,
         createdBy: newUserId,
         updatedBy: newUserId,
-
         role: {
           connect: {
             roleId: role.roleId,
@@ -131,8 +111,10 @@ export const authService = {
       },
     });
 
+    const userProfile = await authService.getProfile(userId);
+
     return {
-      user: { id: userId, email },
+      user: userProfile,
       accessToken,
       refreshToken,
     };
@@ -154,7 +136,6 @@ export const authService = {
       throw ApiError.unauthorized("Refresh token không hợp lệ hoặc đã hết hạn");
     }
 
-    // Xoay vòng refresh token: thu hồi token cũ, phát hành token mới
     await prisma.refreshToken.update({
       where: { id: stored.id },
       data: { revoked: true },
@@ -179,7 +160,6 @@ export const authService = {
         firstName: true,
         lastName: true,
         createdAt: true,
-
         role: {
           select: {
             roleId: true,
@@ -189,10 +169,17 @@ export const authService = {
       },
     });
 
-    if (!user) {
-      throw ApiError.notFound("Không tìm thấy người dùng");
-    }
+    if (!user) throw ApiError.notFound("Không tìm thấy thông tin người dùng");
 
-    return user;
+    const roleName = user.role && user.role.length > 0 ? user.role[0].roleName : "USER";
+
+    return {
+      userId: user.userId,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: roleName,
+      createdAt: user.createdAt,
+    };
   },
 };
