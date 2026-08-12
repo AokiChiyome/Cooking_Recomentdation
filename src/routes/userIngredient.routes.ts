@@ -15,6 +15,10 @@ const ingredientIdParamSchema = uuidParamSchema("ingredientId");
 router.use(authenticate);
 
 router.get("/", userIngredientController.list);
+router.post("/by-name", userIngredientController.addByName);
+router.delete("/by-name", userIngredientController.removeByName);
+router.delete("/clear-all", userIngredientController.clearAll);
+
 router.get(
   "/:ingredientId",
   validateParams(ingredientIdParamSchema),
@@ -32,8 +36,5 @@ router.delete(
   validateParams(ingredientIdParamSchema),
   userIngredientController.remove
 );
-router.post("/by-name", userIngredientController.addByName);
-router.delete("/by-name", userIngredientController.removeByName);
-router.delete("/clear-all", userIngredientController.clearAll);
 
 export default router;

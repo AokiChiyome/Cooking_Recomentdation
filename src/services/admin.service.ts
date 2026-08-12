@@ -3,11 +3,24 @@ import { buildMeta } from "../utils/pagination";
 
 export const adminService = {
   async getStats() {
-    const [totalRecipes, totalUsers, totalIngredients, totalCategories] = await Promise.all([
+    const [
+      totalRecipes,
+      totalUsers,
+      totalIngredients,
+      totalCategories,
+      totalUnits,
+      avgCookTime,
+    ] = await Promise.all([
       prisma.recipe.count(),
       prisma.user.count(),
       prisma.ingredient.count(),
       prisma.category.count(),
+      prisma.unit.count(),
+      prisma.recipe.aggregate({
+        _avg: {
+          cookTime: true,
+        },
+      }),
     ]);
 
     return {
@@ -15,6 +28,10 @@ export const adminService = {
       totalUsers,
       totalIngredients,
       totalCategories,
+      totalUnits,
+      avgCookTimeMinutes: avgCookTime._avg.cookTime
+        ? Math.round(avgCookTime._avg.cookTime)
+        : 0,
     };
   },
 
@@ -38,6 +55,13 @@ export const adminService = {
         take,
         orderBy: { createdAt: "desc" },
         include: {
+          createdByUser: {
+            select: {
+              userId: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
           ingredients: {
             include: {
               ingredient: true,
@@ -61,6 +85,9 @@ export const adminService = {
       cookTime: r.cookTime,
       khauPhan: r.khau_phan || r.khauPhan || "2 người",
       difficulty: r.difficulty || "0",
+      createdByUser: r.createdByUser
+        ? `${r.createdByUser.firstName} ${r.createdByUser.lastName || ""}`.trim()
+        : "Hệ thống",
       ingredientsCount: r.ingredients ? r.ingredients.length : 0,
       stepsCount: r.steps ? r.steps.length : 0,
       ingredients: r.ingredients ? r.ingredients.map((ri: any) => ({

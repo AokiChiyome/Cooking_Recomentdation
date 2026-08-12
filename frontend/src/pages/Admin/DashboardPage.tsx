@@ -45,15 +45,13 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [data, setData] = useState<DashboardSummary | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
 
-    if (!isAdminUser(currentUser)) {
-      showToast("🔒 Bạn không có quyền Admin để truy cập trang này!", "error");
-      navigate("/");
+    if (!currentUser || !isAdminUser(currentUser)) {
       return;
     }
 
@@ -79,6 +77,91 @@ export const DashboardPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div
+        className="admin-page-react"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: "#faf6ee",
+        }}
+      >
+        <p className="dash-loading" style={{ fontSize: 18, color: "#795548" }}>
+          ⏳ Đang kiểm tra quyền Admin...
+        </p>
+      </div>
+    );
+  }
+
+  if (!currentUser || !isAdminUser(currentUser)) {
+    return (
+      <div
+        className="admin-page-react"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          padding: 24,
+          textAlign: "center",
+          background: "#faf6ee",
+        }}
+      >
+        <div
+          style={{
+            background: "#ffffff",
+            padding: "36px 44px",
+            borderRadius: 24,
+            boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
+            maxWidth: 460,
+            width: "100%",
+          }}
+        >
+          <div style={{ fontSize: 52, marginBottom: 16 }}>🔒</div>
+          <h2
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: "#1e293b",
+              marginBottom: 12,
+            }}
+          >
+            Yêu cầu đăng nhập Quản trị
+          </h2>
+          <p
+            style={{
+              color: "#64748b",
+              fontSize: 14,
+              marginBottom: 24,
+              lineHeight: 1.6,
+            }}
+          >
+            Vui lòng đăng nhập bằng tài khoản có vai trò Quản trị (Admin) để xem trang Thống kê Dashboard này.
+          </p>
+          <Link
+            to="/"
+            style={{
+              padding: "11px 22px",
+              borderRadius: 12,
+              background: "#ea580c",
+              color: "#fff",
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: 14,
+              display: "inline-block",
+            }}
+          >
+            Về Trang Chủ
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-page-react">
@@ -149,7 +232,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="stat-info">
                   <h4>Tổng công thức</h4>
                   <div className="stat-number">
-                    {numberFormatter.format(data.overview.totalRecipes)}
+                    {numberFormatter.format(data.overview?.totalRecipes ?? 0)}
                   </div>
                 </div>
               </div>
@@ -157,7 +240,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="stat-info">
                   <h4>Nguyên liệu</h4>
                   <div className="stat-number">
-                    {numberFormatter.format(data.overview.totalIngredients)}
+                    {numberFormatter.format(data.overview?.totalIngredients ?? 0)}
                   </div>
                 </div>
               </div>
@@ -165,7 +248,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="stat-info">
                   <h4>Người dùng</h4>
                   <div className="stat-number">
-                    {numberFormatter.format(data.overview.totalUsers)}
+                    {numberFormatter.format(data.overview?.totalUsers ?? 0)}
                   </div>
                 </div>
               </div>
@@ -173,7 +256,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="stat-info">
                   <h4>Danh mục</h4>
                   <div className="stat-number">
-                    {numberFormatter.format(data.overview.totalCategories)}
+                    {numberFormatter.format(data.overview?.totalCategories ?? 0)}
                   </div>
                 </div>
               </div>
@@ -181,7 +264,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="stat-info">
                   <h4>Đơn vị đo</h4>
                   <div className="stat-number">
-                    {numberFormatter.format(data.overview.totalUnits)}
+                    {numberFormatter.format(data.overview?.totalUnits ?? 0)}
                   </div>
                 </div>
               </div>
@@ -189,7 +272,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="stat-info">
                   <h4>TG nấu TB (phút)</h4>
                   <div className="stat-number">
-                    {numberFormatter.format(data.overview.avgCookTimeMinutes)}
+                    {numberFormatter.format(data.overview?.avgCookTimeMinutes ?? 0)}
                   </div>
                 </div>
               </div>
@@ -257,8 +340,8 @@ export const DashboardPage: React.FC = () => {
                     height={Math.max(220, data.recipesByCategory.length * 34)}
                   >
                     <BarChart
-                      data={data.recipesByCategory.map((c) => ({
-                        name: c.recipeCategoryName,
+                      data={data.recipesByCategory.map((c: any) => ({
+                        name: c.recipeCategoryName || c.categoryName || "Danh mục",
                         count: c.recipeCount,
                       }))}
                       layout="vertical"
@@ -509,12 +592,13 @@ export const DashboardPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.recentRecipes.map((r) => (
+                      {data.recentRecipes.map((r: any) => (
                         <tr key={r.recipeId}>
                           <td>{r.recipeName}</td>
                           <td>
-                            {r.createdByUser.firstName}{" "}
-                            {r.createdByUser.lastName}
+                            {r.createdByUser
+                              ? `${r.createdByUser.firstName || ""} ${r.createdByUser.lastName || ""}`.trim() || "Hệ thống"
+                              : "Hệ thống"}
                           </td>
                         </tr>
                       ))}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import type { Recipe } from "../../types";
@@ -20,6 +20,13 @@ export const HomePage: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [page, setPage] = useState(1);
   const [selectedRecipeDetail, setSelectedRecipeDetail] = useState<Recipe | null>(null);
+
+  // Clear local fridge state on logout
+  useEffect(() => {
+    if (!currentUser) {
+      setSelectedIngredients([]);
+    }
+  }, [currentUser]);
 
   // 1. Fetch categories with TanStack Query
   const { data: categories = [] } = useQuery({
@@ -186,9 +193,7 @@ export const HomePage: React.FC = () => {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           const names = json.data.map((item: any) => item.ingredient?.ingredientName).filter(Boolean);
-          if (names.length > 0) {
-            setSelectedIngredients(names);
-          }
+          setSelectedIngredients(names);
           return names;
         }
       } catch (err) {
@@ -230,7 +235,11 @@ export const HomePage: React.FC = () => {
       fetchWithAuth("/api/user-ingredients/by-name", {
         method: "DELETE",
         body: JSON.stringify({ name: ing }),
-      }).catch((err) => console.error("Sync remove ingredient DB error:", err));
+      })
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ["userIngredients", currentUser.userId] });
+        })
+        .catch((err) => console.error("Sync remove ingredient DB error:", err));
     }
   };
 
@@ -241,7 +250,11 @@ export const HomePage: React.FC = () => {
     if (currentUser) {
       fetchWithAuth("/api/user-ingredients/clear-all", {
         method: "DELETE",
-      }).catch((err) => console.error("Sync clear ingredients DB error:", err));
+      })
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ["userIngredients", currentUser.userId] });
+        })
+        .catch((err) => console.error("Sync clear ingredients DB error:", err));
     }
   };
 

@@ -433,24 +433,25 @@ export const AdminPage: React.FC = () => {
                   <th>Thời gian</th>
                   <th>Khẩu phần</th>
                   <th>Số nguyên liệu</th>
+                  <th>Người tạo</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="table-empty-row">
+                    <td colSpan={7} className="table-empty-row">
                       Đang tải danh sách công thức...
                     </td>
                   </tr>
                 ) : recipes.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="table-empty-row">
+                    <td colSpan={7} className="table-empty-row">
                       Không tìm thấy công thức món ăn nào.
                     </td>
                   </tr>
                 ) : (
-                  recipes.map((recipe) => (
+                  recipes.map((recipe: any) => (
                     <tr key={recipe.recipeId}>
                       <td>
                         <img
@@ -483,6 +484,12 @@ export const AdminPage: React.FC = () => {
                         <span className="table-inline-icon">
                           <Leaf size={13} />{" "}
                           {(recipe.ingredients || []).length} nguyên liệu
+                        </span>
+                      </td>
+                      <td>
+                        <span className="table-inline-icon">
+                          <Users size={13} />{" "}
+                          {recipe.createdByUser || "Hệ thống"}
                         </span>
                       </td>
                       <td>
