@@ -132,15 +132,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <Dices size={15} /> Gợi ý ngẫu nhiên
           </button>
 
-          {suggestedIngredients.slice(0, 8).map((ing) => (
-            <button
-              key={ing}
-              className="chip-btn"
-              onClick={() => onAddIngredient(ing)}
-            >
-              + {ing}
-            </button>
-          ))}
+          {Array.from(
+            new Set(
+              suggestedIngredients
+                .flatMap((ing) => (typeof ing === "string" ? ing.split(/[,;\n]+/) : []))
+                .map((s) => s.trim().toLowerCase())
+                .filter(Boolean)
+            )
+          )
+            .slice(0, 15)
+            .map((ing) => (
+              <button
+                key={ing}
+                className="chip-btn"
+                onClick={() => onAddIngredient(ing)}
+              >
+                + {ing}
+              </button>
+            ))}
         </div>
       </div>
     </section>

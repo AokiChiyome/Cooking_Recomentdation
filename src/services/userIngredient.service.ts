@@ -93,32 +93,42 @@ export const userIngredientService = {
   },
 
   async addByName(userId: string, ingredientName: string) {
-    const nameClean = ingredientName.trim().toLowerCase();
-    if (!nameClean) return null;
+    const rawNames = ingredientName
+      .split(/[,;\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-    let ingredient = await prisma.ingredient.findFirst({
-      where: { ingredientName: { equals: nameClean, mode: "insensitive" } },
-    });
+    if (rawNames.length === 0) return null;
 
-    if (!ingredient) {
-      ingredient = await prisma.ingredient.create({
-        data: {
-          ingredientName: ingredientName.trim(),
-          createdBy: userId,
-          updatedBy: userId,
-        },
+    const results = [];
+    for (const nameClean of rawNames) {
+      let ingredient = await prisma.ingredient.findFirst({
+        where: { ingredientName: { equals: nameClean.toLowerCase(), mode: "insensitive" } },
       });
+
+      if (!ingredient) {
+        ingredient = await prisma.ingredient.create({
+          data: {
+            ingredientName: nameClean,
+            createdBy: userId,
+            updatedBy: userId,
+          },
+        });
+      }
+
+      const item = await prisma.userIngredient.upsert({
+        where: { userId_ingredientId: { userId, ingredientId: ingredient.ingredientId } },
+        create: {
+          userId,
+          ingredientId: ingredient.ingredientId,
+        },
+        update: {},
+        include: { ingredient: true },
+      });
+      results.push(item);
     }
 
-    return prisma.userIngredient.upsert({
-      where: { userId_ingredientId: { userId, ingredientId: ingredient.ingredientId } },
-      create: {
-        userId,
-        ingredientId: ingredient.ingredientId,
-      },
-      update: {},
-      include: { ingredient: true },
-    });
+    return results;
   },
 
   async removeByName(userId: string, ingredientName: string) {

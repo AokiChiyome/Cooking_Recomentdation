@@ -43,7 +43,7 @@ export const HomePage: React.FC = () => {
   const { data: suggestedIngredients = [] } = useQuery({
     queryKey: ["popularIngredients"],
     queryFn: async () => {
-      const res = await fetch("/api/ingredients/top-popular?limit=10");
+      const res = await fetch("/api/ingredients/top-popular?limit=30");
       const json = await res.json();
       return json.success && Array.isArray(json.data) ? json.data : [];
     },
@@ -192,7 +192,15 @@ export const HomePage: React.FC = () => {
         const res = await fetchWithAuth("/api/user-ingredients");
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
-          const names = json.data.map((item: any) => item.ingredient?.ingredientName).filter(Boolean);
+          const rawNames: string[] = json.data.map((item: any) => item.ingredient?.ingredientName).filter(Boolean);
+          // Split any legacy comma-separated entries cleanly
+          const names: string[] = [];
+          rawNames.forEach((rn) => {
+            rn.split(/[,;\n]+/).forEach((sub) => {
+              const clean = sub.trim().toLowerCase();
+              if (clean && !names.includes(clean)) names.push(clean);
+            });
+          });
           setSelectedIngredients(names);
           return names;
         }
@@ -213,17 +221,31 @@ export const HomePage: React.FC = () => {
   const loading = activeTab === "saved" ? isSavedLoading : isRecipesLoading;
 
   const handleAddIngredient = (ing: string) => {
-    const cleanIng = ing.trim().toLowerCase();
-    if (cleanIng && !selectedIngredients.includes(cleanIng)) {
-      setSelectedIngredients((prev) => [...prev, cleanIng]);
-      setPage(1);
+    const items = ing
+      .split(/[,;\n]+/)
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
 
-      if (currentUser) {
+    if (items.length === 0) return;
+
+    setSelectedIngredients((prev) => {
+      const next = [...prev];
+      items.forEach((item) => {
+        if (!next.includes(item)) {
+          next.push(item);
+        }
+      });
+      return next;
+    });
+    setPage(1);
+
+    if (currentUser) {
+      items.forEach((item) => {
         fetchWithAuth("/api/user-ingredients/by-name", {
           method: "POST",
-          body: JSON.stringify({ name: cleanIng }),
+          body: JSON.stringify({ name: item }),
         }).catch((err) => console.error("Sync add ingredient DB error:", err));
-      }
+      });
     }
   };
 
@@ -259,12 +281,34 @@ export const HomePage: React.FC = () => {
   };
 
   const handleSuggestRandom = () => {
-    const list = suggestedIngredients.length > 0
-      ? suggestedIngredients
-      : ["thịt bò", "thịt heo", "thịt gà", "trứng", "cà chua", "tỏi", "tôm"];
+    const defaultList = [
+      "thịt bò", "thịt heo", "thịt gà", "trứng", "cà chua", "hành tây",
+      "tỏi", "tôm", "cà rốt", "khoai tây", "nấm", "gừng", "ớt", "sả", "hành lá"
+    ];
+    const rawList = suggestedIngredients.length > 0
+      ? suggestedIngredients.map((i: any) => typeof i === "string" ? i : i.ingredientName || i.name)
+      : defaultList;
+
+    const list: string[] = [];
+    rawList.forEach((item: string) => {
+      if (item) {
+        item.split(/[,;\n]+/).forEach((s) => {
+          const clean = s.trim().toLowerCase();
+          if (clean && !list.includes(clean)) list.push(clean);
+        });
+      }
+    });
+
     const shuffled = [...list].sort(() => 0.5 - Math.random());
-    const randomSelected = shuffled.slice(0, 3);
-    setSelectedIngredients(randomSelected);
+    const randomSelected = shuffled.slice(0, 4);
+
+    setSelectedIngredients((prev) => {
+      const next = [...prev];
+      randomSelected.forEach((ing) => {
+        if (!next.includes(ing)) next.push(ing);
+      });
+      return next;
+    });
     setPage(1);
 
     if (currentUser) {
