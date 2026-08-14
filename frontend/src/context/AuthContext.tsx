@@ -11,7 +11,7 @@ import {
 interface ToastItem {
   id: string;
   message: string;
-  type: "success" | "error";
+  type: "success" | "error" | "info";
 }
 
 interface AuthContextType {
@@ -21,7 +21,7 @@ interface AuthContextType {
   toasts: ToastItem[];
   openModal: (modalName: "login" | "register" | "profile") => void;
   closeModal: () => void;
-  showToast: (message: string, type?: "success" | "error") => void;
+  showToast: (message: string, type?: "success" | "error" | "info") => void;
   handleLogin: (email: string, password: string) => Promise<boolean>;
   handleRegister: (
     email: string,
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const showToast = (
     message: string,
-    type: "success" | "error" = "success",
+    type: "success" | "error" | "info" = "success",
   ) => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -119,7 +119,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       closeModal();
       await checkAuthStatus();
-      showToast(`🎉 Đăng nhập thành công! Chào mừng ${json.data.user?.firstName || ''} trở lại.`, "success");
+      showToast(
+        `🎉 Đăng nhập thành công! Chào mừng ${json.data.user?.firstName || ""} trở lại.`,
+        "success",
+      );
       return true;
     } catch (err: any) {
       showToast(err.message || "Đăng nhập thất bại", "error");

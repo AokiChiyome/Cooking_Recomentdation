@@ -19,15 +19,15 @@ import {
   YAxis,
 } from "recharts";
 import { ChefHat, Globe, LogOut, RefreshCw } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./admin.css";
 import type { DashboardSummary } from "./dashboardStats";
 
 const DIFFICULTY_LABELS: Record<string, string> = {
-  "1": "Dễ",
-  "2": "Trung bình",
-  "3": "Khó",
-  "4": "Rất khó",
+  "0": "Dễ",
+  "1": "Trung bình",
+  "2": "Khó",
+  "3": "Rất khó",
 };
 
 const PIE_COLORS = ["#c1432e", "#b8862e", "#5b7553", "#8a6f4e", "#a45a3f"];
@@ -41,9 +41,7 @@ function formatShortDate(iso: string): string {
 const numberFormatter = new Intl.NumberFormat("vi-VN");
 
 export const DashboardPage: React.FC = () => {
-  const { currentUser, authLoading, handleLogout, showToast } = useAuth();
-  const navigate = useNavigate();
-
+  const { currentUser, authLoading, handleLogout } = useAuth();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -141,7 +139,8 @@ export const DashboardPage: React.FC = () => {
               lineHeight: 1.6,
             }}
           >
-            Vui lòng đăng nhập bằng tài khoản có vai trò Quản trị (Admin) để xem trang Thống kê Dashboard này.
+            Vui lòng đăng nhập bằng tài khoản có vai trò Quản trị (Admin) để xem
+            trang Thống kê Dashboard này.
           </p>
           <Link
             to="/"
@@ -240,7 +239,9 @@ export const DashboardPage: React.FC = () => {
                 <div className="stat-info">
                   <h4>Nguyên liệu</h4>
                   <div className="stat-number">
-                    {numberFormatter.format(data.overview?.totalIngredients ?? 0)}
+                    {numberFormatter.format(
+                      data.overview?.totalIngredients ?? 0,
+                    )}
                   </div>
                 </div>
               </div>
@@ -256,7 +257,9 @@ export const DashboardPage: React.FC = () => {
                 <div className="stat-info">
                   <h4>Danh mục</h4>
                   <div className="stat-number">
-                    {numberFormatter.format(data.overview?.totalCategories ?? 0)}
+                    {numberFormatter.format(
+                      data.overview?.totalCategories ?? 0,
+                    )}
                   </div>
                 </div>
               </div>
@@ -272,7 +275,9 @@ export const DashboardPage: React.FC = () => {
                 <div className="stat-info">
                   <h4>TG nấu TB (phút)</h4>
                   <div className="stat-number">
-                    {numberFormatter.format(data.overview?.avgCookTimeMinutes ?? 0)}
+                    {numberFormatter.format(
+                      data.overview?.avgCookTimeMinutes ?? 0,
+                    )}
                   </div>
                 </div>
               </div>
@@ -341,7 +346,8 @@ export const DashboardPage: React.FC = () => {
                   >
                     <BarChart
                       data={data.recipesByCategory.map((c: any) => ({
-                        name: c.recipeCategoryName || c.categoryName || "Danh mục",
+                        name:
+                          c.recipeCategoryName || c.categoryName || "Danh mục",
                         count: c.recipeCount,
                       }))}
                       layout="vertical"
@@ -597,7 +603,8 @@ export const DashboardPage: React.FC = () => {
                           <td>{r.recipeName}</td>
                           <td>
                             {r.createdByUser
-                              ? `${r.createdByUser.firstName || ""} ${r.createdByUser.lastName || ""}`.trim() || "Hệ thống"
+                              ? `${r.createdByUser.firstName || ""} ${r.createdByUser.lastName || ""}`.trim() ||
+                                "Hệ thống"
                               : "Hệ thống"}
                           </td>
                         </tr>

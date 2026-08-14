@@ -10,5 +10,6 @@ router.get("/stats", adminController.getStats);
 router.get("/recipes", adminController.getRecipes);
 router.post("/recipes", adminController.createRecipe);
 router.delete("/recipes/:id", adminController.deleteRecipe);
+router.put("/recipes/:id", adminController.updateRecipe);
 
 export default router;
