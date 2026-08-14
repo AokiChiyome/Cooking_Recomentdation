@@ -16,6 +16,7 @@ import {
   Users,
   UtensilsCrossed,
   X,
+  Pencil,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import "./admin.css";
@@ -31,7 +32,7 @@ export const AdminPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // Modal Thêm món ăn state
-  const [showAddModal, setShowAddModal] = useState(false);
+  // const [showAddModal, setShowAddModal] = useState(false);
   const [recipeName, setRecipeName] = useState("");
   const [cookTime, setCookTime] = useState(30);
   const [khauPhan, setKhauPhan] = useState("2 người");
@@ -39,6 +40,8 @@ export const AdminPage: React.FC = () => {
   const [recipeDesc, setRecipeDesc] = useState("");
   const [rawIngredients, setRawIngredients] = useState("");
   const [rawSteps, setRawSteps] = useState("");
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
   // Security check: Redirect if not ADMIN
   useEffect(() => {
@@ -109,23 +112,88 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  const handleCreateRecipeSubmit = async (e: React.FormEvent) => {
+  // const handleCreateRecipeSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+
+  //   const ingredients = rawIngredients
+  //     ? rawIngredients
+  //         .split("\n")
+  //         .filter((l) => l.trim())
+  //         .map((l) => {
+  //           const parts = l.split(":");
+  //           return {
+  //             ingredientName: parts[0].trim(),
+  //             amount: parts[1] ? parts[1].trim() : "Vừa đủ",
+  //           };
+  //         })
+  //     : [];
+
+  //   const steps = rawSteps ? rawSteps.split("\n").filter((l) => l.trim()) : [];
+
+  //   const bodyData = {
+  //     recipeName,
+  //     cookTime,
+  //     khauPhan,
+  //     recipeImage,
+  //     recipeDescription: recipeDesc,
+  //     ingredients,
+  //     steps,
+  //   };
+
+  //   try {
+  //     const res = await fetchWithAuth("/api/admin/recipes", {
+  //       method: "POST",
+  //       body: JSON.stringify(bodyData),
+  //     });
+
+  //     const json = await res.json();
+  //     if (json.success) {
+  //       showToast(
+  //         `🎉 Thêm thành công món "${recipeName}" vào CSDL!`,
+  //         "success",
+  //       );
+  //       setShowAddModal(false);
+  //       setRecipeName("");
+  //       setRecipeImage("");
+  //       setRecipeDesc("");
+  //       setRawIngredients("");
+  //       setRawSteps("");
+  //       loadStats();
+  //       loadAdminRecipes(1, searchQ);
+  //     } else {
+  //       showToast(json.message || "Không thể thêm món ăn", "error");
+  //     }
+  //   } catch (err) {
+  //     showToast("Lỗi máy chủ khi thêm món ăn", "error");
+  //   }
+  // };
+
+  const handleSaveRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const ingredients = rawIngredients
       ? rawIngredients
           .split("\n")
-          .filter((l) => l.trim())
-          .map((l) => {
-            const parts = l.split(":");
+          .filter((line) => line.trim())
+          .map((line) => {
+            const [name, ...amountParts] = line.split(":");
+
             return {
-              ingredientName: parts[0].trim(),
-              amount: parts[1] ? parts[1].trim() : "Vừa đủ",
+              ingredientName: name.trim(),
+              quantity: amountParts.join(":").trim() || "Vừa đủ",
             };
           })
       : [];
 
-    const steps = rawSteps ? rawSteps.split("\n").filter((l) => l.trim()) : [];
+    const steps = rawSteps
+      ? rawSteps
+          .split("\n")
+          .filter((line) => line.trim())
+          .map((description, index) => ({
+            stepNumber: index + 1,
+            description: description.trim(),
+          }))
+      : [];
 
     const bodyData = {
       recipeName,
@@ -138,30 +206,47 @@ export const AdminPage: React.FC = () => {
     };
 
     try {
-      const res = await fetchWithAuth("/api/admin/recipes", {
-        method: "POST",
+      const isEdit = !!editingRecipe;
+
+      const url = isEdit
+        ? `/api/admin/recipes/${editingRecipe.recipeId}`
+        : "/api/admin/recipes";
+
+      const res = await fetchWithAuth(url, {
+        method: isEdit ? "PUT" : "POST",
         body: JSON.stringify(bodyData),
       });
 
       const json = await res.json();
+
       if (json.success) {
         showToast(
-          `🎉 Thêm thành công món "${recipeName}" vào CSDL!`,
+          isEdit
+            ? `✅ Đã cập nhật "${recipeName}"!`
+            : `🎉 Đã thêm "${recipeName}" vào CSDL!`,
           "success",
         );
-        setShowAddModal(false);
+
+        setShowRecipeModal(false);
+        setEditingRecipe(null);
+
         setRecipeName("");
+        setCookTime(30);
+        setKhauPhan("2 người");
         setRecipeImage("");
         setRecipeDesc("");
         setRawIngredients("");
         setRawSteps("");
+
         loadStats();
-        loadAdminRecipes(1, searchQ);
+        loadAdminRecipes(isEdit ? page : 1, searchQ);
       } else {
-        showToast(json.message || "Không thể thêm món ăn", "error");
+        showToast(json.message || "Không thể lưu công thức", "error");
       }
     } catch (err) {
-      showToast("Lỗi máy chủ khi thêm món ăn", "error");
+      console.error("Save recipe error:", err);
+
+      showToast("Lỗi máy chủ khi lưu công thức", "error");
     }
   };
 
@@ -297,7 +382,8 @@ export const AdminPage: React.FC = () => {
               lineHeight: 1.6,
             }}
           >
-            Tài khoản <strong style={{ color: "#0f172a" }}>{currentUser.email}</strong>{" "}
+            Tài khoản{" "}
+            <strong style={{ color: "#0f172a" }}>{currentUser.email}</strong>{" "}
             hiện tại chỉ có quyền Người dùng, không có quyền Quản trị Admin.
           </p>
           <Link
@@ -319,6 +405,33 @@ export const AdminPage: React.FC = () => {
       </div>
     );
   }
+
+  const handleEditRecipe = (recipe: any) => {
+    setEditingRecipe(recipe);
+
+    setRecipeName(recipe.recipeName || "");
+    setCookTime(recipe.cookTime || 30);
+    setKhauPhan(recipe.khauPhan || "2 người");
+    setRecipeImage(recipe.recipeImage || recipe.hinh_anh || "");
+    setRecipeDesc(recipe.recipeDescription || "");
+
+    const ingredientsText = (recipe.ingredients || [])
+      .map((ingredient: any) => {
+        return `${ingredient.ingredientName}: ${ingredient.quantity || "Vừa đủ"}`;
+      })
+      .join("\n");
+
+    setRawIngredients(ingredientsText);
+
+    const stepsText = (recipe.steps || [])
+      .sort((a: any, b: any) => a.stepNumber - b.stepNumber)
+      .map((step: any) => step.description)
+      .join("\n");
+
+    setRawSteps(stepsText);
+
+    setShowRecipeModal(true);
+  };
 
   return (
     <div className="admin-page-react">
@@ -415,7 +528,19 @@ export const AdminPage: React.FC = () => {
               />
               <button
                 className="btn-create-recipe"
-                onClick={() => setShowAddModal(true)}
+                onClick={() => {
+                  setEditingRecipe(null);
+
+                  setRecipeName("");
+                  setCookTime(30);
+                  setKhauPhan("2 người");
+                  setRecipeImage("");
+                  setRecipeDesc("");
+                  setRawIngredients("");
+                  setRawSteps("");
+
+                  setShowRecipeModal(true);
+                }}
               >
                 <PlusCircle size={16} />
                 <span>Thêm Món Mới</span>
@@ -482,8 +607,8 @@ export const AdminPage: React.FC = () => {
                       </td>
                       <td>
                         <span className="table-inline-icon">
-                          <Leaf size={13} />{" "}
-                          {(recipe.ingredients || []).length} nguyên liệu
+                          <Leaf size={13} /> {(recipe.ingredients || []).length}{" "}
+                          nguyên liệu
                         </span>
                       </td>
                       <td>
@@ -493,6 +618,13 @@ export const AdminPage: React.FC = () => {
                         </span>
                       </td>
                       <td>
+                        <button
+                          className="btn-action"
+                          onClick={() => handleEditRecipe(recipe)}
+                        >
+                          <Pencil size={14} />
+                          Sửa
+                        </button>
                         <button
                           className="btn-action btn-action-delete"
                           onClick={() =>
@@ -540,11 +672,23 @@ export const AdminPage: React.FC = () => {
       </main>
 
       {/* Modal Thêm món ăn mới */}
-      {showAddModal && (
+      {showRecipeModal && (
         <div
           className="modal-backdrop open"
           style={{ display: "flex" }}
-          onClick={() => setShowAddModal(false)}
+          onClick={() => {
+            setEditingRecipe(null);
+
+            setRecipeName("");
+            setCookTime(30);
+            setKhauPhan("2 người");
+            setRecipeImage("");
+            setRecipeDesc("");
+            setRawIngredients("");
+            setRawSteps("");
+
+            setShowRecipeModal(true);
+          }}
         >
           <div
             className="modal-card auth-modal-card"
@@ -553,19 +697,23 @@ export const AdminPage: React.FC = () => {
           >
             <button
               className="btn-close-modal"
-              onClick={() => setShowAddModal(false)}
+              onClick={() => setShowRecipeModal(false)}
             >
               <X size={20} />
             </button>
 
             <div className="auth-modal-header">
-              <h3 className="auth-modal-title">Thêm Món Ăn Mới</h3>
+              <h3 className="auth-modal-title">
+                {editingRecipe ? "Chỉnh Sửa Công Thức" : "Thêm Món Ăn Mới"}
+              </h3>
               <p className="auth-modal-subtitle">
-                Điền thông tin công thức mới vào CSDL SmartCook
+                {editingRecipe
+                  ? "Cập nhật thông tin công thức trong CSDL SmartCook"
+                  : "Điền thông tin công thức mới vào CSDL SmartCook"}
               </p>
             </div>
 
-            <form className="form-auth" onSubmit={handleCreateRecipeSubmit}>
+            <form className="form-auth" onSubmit={handleSaveRecipe}>
               <div className="auth-field-group">
                 <label className="auth-label">Tên món ăn *</label>
                 <input
@@ -646,7 +794,9 @@ export const AdminPage: React.FC = () => {
               </div>
 
               <button type="submit" className="btn-search-main">
-                💾 Lưu Công Thức Món Ăn
+                {editingRecipe
+                  ? "💾 Cập Nhật Công Thức"
+                  : "💾 Lưu Công Thức Món Ăn"}
               </button>
             </form>
           </div>

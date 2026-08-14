@@ -18,13 +18,28 @@ export const adminController = {
   }),
 
   createRecipe: asyncHandler(async (req: Request, res: Response) => {
-    const data = await adminService.createRecipe(req.body);
-    res.status(201).json({ success: true, message: "Thêm món ăn thành công", data });
+    const data = await adminService.createRecipe(req.body, req.user!.userId);
+    res
+      .status(201)
+      .json({ success: true, message: "Thêm món ăn thành công", data });
   }),
 
   deleteRecipe: asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     await adminService.deleteRecipe(id);
     res.json({ success: true, message: "Xóa món ăn thành công" });
+  }),
+
+  updateRecipe: asyncHandler(async (req: Request, res: Response) => {
+    const recipe = await adminService.updateRecipe(
+      req.params.id,
+      req.body,
+      req.user!.userId,
+    );
+
+    return res.json({
+      success: true,
+      data: recipe,
+    });
   }),
 };

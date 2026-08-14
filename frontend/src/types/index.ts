@@ -18,13 +18,9 @@ export interface IngredientUnit {
   symbol: string;
 }
 
-export interface IngredientDetail {
+export interface RecipeIngredientItem {
   ingredientId: string;
   ingredientName: string;
-}
-
-export interface RecipeIngredientItem {
-  ingredient: IngredientDetail;
   unit?: IngredientUnit;
   quantity?: number;
   amount?: string;
@@ -81,7 +77,7 @@ export function isAdminUser(user: any): boolean {
     return user.role.some((r: any) =>
       typeof r === "string"
         ? r.toUpperCase() === "ADMIN"
-        : (r?.roleName || r?.name || "").toUpperCase() === "ADMIN"
+        : (r?.roleName || r?.name || "").toUpperCase() === "ADMIN",
     );
   }
   return false;

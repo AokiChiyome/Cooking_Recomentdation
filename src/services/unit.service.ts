@@ -40,7 +40,22 @@ export const unitService = {
   async create(input: CreateUnitInput, userId: string) {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.unit.findFirst({
-        where: { OR: [{ unitName: input.unitName }, { symbol: input.symbol }] },
+        where: {
+          OR: [
+            {
+              unitName: {
+                equals: input.unitName,
+                mode: "insensitive",
+              },
+            },
+            {
+              symbol: {
+                equals: input.symbol,
+                mode: "insensitive",
+              },
+            },
+          ],
+        },
       });
       if (existing) {
         throw ApiError.conflict("Tên đơn vị hoặc ký hiệu đã tồn tại");
@@ -94,8 +109,12 @@ export const unitService = {
       const existing = await tx.unit.findUnique({ where: { unitId: id } });
       if (!existing) throw ApiError.notFound("Không tìm thấy đơn vị");
 
-      const usedInRecipe = await tx.recipeIngredient.findFirst({ where: { unitId: id } });
-      const usedInPantry = await tx.userIngredient.findFirst({ where: { unitId: id } });
+      const usedInRecipe = await tx.recipeIngredient.findFirst({
+        where: { unitId: id },
+      });
+      const usedInPantry = await tx.userIngredient.findFirst({
+        where: { unitId: id },
+      });
       if (usedInRecipe || usedInPantry) {
         throw ApiError.badRequest("Không thể xoá đơn vị đang được sử dụng");
       }

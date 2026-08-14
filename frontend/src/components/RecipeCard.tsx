@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import type { Recipe } from '../types';
-import { Clock, Flame, ArrowRight, Bookmark, CheckCircle2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { fetchWithAuth } from '../services/api';
-import { useQueryClient } from '@tanstack/react-query';
+import React from "react";
+import type { Recipe } from "../types";
+import { Clock, Flame, ArrowRight, Bookmark, CheckCircle2 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { fetchWithAuth } from "../services/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -17,7 +17,6 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   recipe,
   selectedIngredients,
   onOpenDetail,
-  isSaved: initialIsSaved = false,
   onToggleSaveSuccess,
 }) => {
   const { currentUser, openModal, showToast } = useAuth();
@@ -26,7 +25,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   const [saved, setSaved] = React.useState<boolean>(() => {
     if (!currentUser) return false;
     const savedKey = `saved_recipes_${currentUser.userId}`;
-    const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
+    const savedIds: string[] = JSON.parse(
+      localStorage.getItem(savedKey) || "[]",
+    );
     return savedIds.includes(recipe.recipeId);
   });
 
@@ -35,7 +36,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       setSaved(false);
     } else {
       const savedKey = `saved_recipes_${currentUser.userId}`;
-      const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
+      const savedIds: string[] = JSON.parse(
+        localStorage.getItem(savedKey) || "[]",
+      );
       setSaved(savedIds.includes(recipe.recipeId));
     }
   }, [currentUser, recipe.recipeId]);
@@ -43,8 +46,11 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   const handleToggleSave = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUser) {
-      showToast('⚠️ Vui lòng đăng nhập để lưu công thức món ăn yêu thích.', 'error');
-      openModal('login');
+      showToast(
+        "⚠️ Vui lòng đăng nhập để lưu công thức món ăn yêu thích.",
+        "error",
+      );
+      openModal("login");
       return;
     }
 
@@ -56,36 +62,48 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 
     // 2. Update localStorage immediately
     const savedKey = `saved_recipes_${currentUser.userId}`;
-    const savedIds: string[] = JSON.parse(localStorage.getItem(savedKey) || '[]');
+    const savedIds: string[] = JSON.parse(
+      localStorage.getItem(savedKey) || "[]",
+    );
     const updatedIds = nextState
       ? Array.from(new Set([...savedIds, recipe.recipeId]))
       : savedIds.filter((id) => id !== recipe.recipeId);
     localStorage.setItem(savedKey, JSON.stringify(updatedIds));
 
     // 3. Optimistically update React Query cache to fix N-1 count issue immediately
-    queryClient.setQueryData(["savedRecipes", currentUser.userId], (oldData: any) => {
-      const list = Array.isArray(oldData) ? oldData : [];
-      if (nextState) {
-        if (list.some((r: any) => r.recipeId === recipe.recipeId)) return list;
-        return [recipe, ...list];
-      } else {
-        return list.filter((r: any) => r.recipeId !== recipe.recipeId);
-      }
-    });
+    queryClient.setQueryData(
+      ["savedRecipes", currentUser.userId],
+      (oldData: any) => {
+        const list = Array.isArray(oldData) ? oldData : [];
+        if (nextState) {
+          if (list.some((r: any) => r.recipeId === recipe.recipeId))
+            return list;
+          return [recipe, ...list];
+        } else {
+          return list.filter((r: any) => r.recipeId !== recipe.recipeId);
+        }
+      },
+    );
 
     // 4. Instant Toast Notification
     showToast(
-      nextState ? '⭐ Đã lưu món ăn này' : '🗑️ Đã xóa món ăn khỏi danh sách đã lưu',
-      nextState ? 'success' : 'info'
+      nextState
+        ? "⭐ Đã lưu món ăn này"
+        : "🗑️ Đã xóa món ăn khỏi danh sách đã lưu",
+      nextState ? "success" : "info",
     );
 
     // 5. Background API Sync with CockroachDB & post-write refetch
-    const method = nextState ? 'POST' : 'DELETE';
+    const method = nextState ? "POST" : "DELETE";
     try {
-      const res = await fetchWithAuth(`/api/recipes/${recipe.recipeId}/save`, { method });
+      const res = await fetchWithAuth(`/api/recipes/${recipe.recipeId}/save`, {
+        method,
+      });
       const json = await res.json();
       if (json.success) {
-        queryClient.invalidateQueries({ queryKey: ["savedRecipes", currentUser.userId] });
+        queryClient.invalidateQueries({
+          queryKey: ["savedRecipes", currentUser.userId],
+        });
         if (onToggleSaveSuccess) {
           onToggleSaveSuccess();
         }
@@ -93,16 +111,23 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         // Rollback state if server returns error
         setSaved(previousSavedState);
         localStorage.setItem(savedKey, JSON.stringify(savedIds));
-        queryClient.invalidateQueries({ queryKey: ["savedRecipes", currentUser.userId] });
-        showToast(json.message || 'Không thể cập nhật trạng thái lưu món ăn', 'error');
+        queryClient.invalidateQueries({
+          queryKey: ["savedRecipes", currentUser.userId],
+        });
+        showToast(
+          json.message || "Không thể cập nhật trạng thái lưu món ăn",
+          "error",
+        );
       }
     } catch (err) {
-      console.error('Save recipe error:', err);
+      console.error("Save recipe error:", err);
       // Rollback state on network error
       setSaved(previousSavedState);
       localStorage.setItem(savedKey, JSON.stringify(savedIds));
-      queryClient.invalidateQueries({ queryKey: ["savedRecipes", currentUser.userId] });
-      showToast('Lỗi mạng khi lưu món ăn', 'error');
+      queryClient.invalidateQueries({
+        queryKey: ["savedRecipes", currentUser.userId],
+      });
+      showToast("Lỗi mạng khi lưu món ăn", "error");
     }
   };
 
@@ -124,7 +149,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
     }
   }
 
-  const imgUrl = recipe.recipeImage || recipe.hinh_anh;
+  const imgUrl = recipe.recipeImage;
 
   return (
     <div className="recipe-card">
@@ -135,7 +160,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             alt={recipe.recipeName}
             className="card-img"
             onError={(e) => {
-              (e.target as HTMLElement).outerHTML = '<div class="card-img-placeholder">🥘</div>';
+              (e.target as HTMLElement).outerHTML =
+                '<div class="card-img-placeholder">🥘</div>';
             }}
           />
         ) : (
@@ -152,17 +178,24 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             <Clock size={16} /> {recipe.cookTime || 15} phút
           </div>
           <div className="metric-item">
-            <Flame size={16} /> Độ khó: {recipe.difficulty || 'Dễ'}
+            <Flame size={16} /> Độ khó: {recipe.difficulty || "Dễ"}
           </div>
         </div>
 
         {(() => {
-          const firstStepDesc = recipe.steps && recipe.steps.length > 0 ? recipe.steps[0].description : '';
-          const rawDesc = recipe.recipeDescription || (recipe as any).description || (firstStepDesc ? `Bước 1: ${firstStepDesc}` : '');
+          const firstStepDesc =
+            recipe.steps && recipe.steps.length > 0
+              ? recipe.steps[0].description
+              : "";
+          const rawDesc =
+            recipe.recipeDescription ||
+            (recipe as any).description ||
+            (firstStepDesc ? `Bước 1: ${firstStepDesc}` : "");
           const cleanDesc = rawDesc.trim();
           return (
             <p className="recipe-description">
-              {cleanDesc || 'Món ăn thơm ngon, dễ làm, phù hợp bữa cơm gia đình.'}
+              {cleanDesc ||
+                "Món ăn thơm ngon, dễ làm, phù hợp bữa cơm gia đình."}
             </p>
           );
         })()}
@@ -172,7 +205,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           <div className="card-ingredients-list">
             {(recipe.ingredients || []).length > 0 ? (
               recipe.ingredients!.map((ingObj, idx) => {
-                const ingName = ingObj.ingredientName || ingObj.ingredient?.ingredientName || 'Nguyên liệu';
+                const ingName = ingObj.ingredientName || "Nguyên liệu";
                 const cleanIng = ingName.trim().toLowerCase();
                 const isMatched =
                   selectedIngredients.length > 0 &&
@@ -180,7 +213,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                     const cleanSel = selected.trim().toLowerCase();
                     return (
                       cleanSel.length > 0 &&
-                      (cleanIng.includes(cleanSel) || cleanSel.includes(cleanIng))
+                      (cleanIng.includes(cleanSel) ||
+                        cleanSel.includes(cleanIng))
                     );
                   });
 
@@ -189,10 +223,10 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                     key={idx}
                     className={`ing-chip ${
                       isMatched
-                        ? 'matched'
+                        ? "matched"
                         : selectedIngredients.length > 0
-                        ? 'missing'
-                        : 'matched'
+                          ? "missing"
+                          : "matched"
                     }`}
                   >
                     {ingName}
@@ -205,7 +239,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
           <button
             className="btn-view-recipe"
             style={{ flex: 1 }}
@@ -215,19 +249,19 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           </button>
 
           <button
-            className={`btn btn-secondary ${saved ? 'saved' : ''}`}
+            className={`btn btn-secondary ${saved ? "saved" : ""}`}
             style={{
-              padding: '0 0.85rem',
-              borderRadius: '0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              fontSize: '0.85rem',
+              padding: "0 0.85rem",
+              borderRadius: "0.75rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.35rem",
+              fontSize: "0.85rem",
             }}
-            title={saved ? 'Đã lưu công thức' : 'Lưu công thức yêu thích'}
+            title={saved ? "Đã lưu công thức" : "Lưu công thức yêu thích"}
             onClick={handleToggleSave}
           >
-            <Bookmark size={16} color={saved ? '#22c55e' : 'currentColor'} />
+            <Bookmark size={16} color={saved ? "#22c55e" : "currentColor"} />
           </button>
         </div>
       </div>

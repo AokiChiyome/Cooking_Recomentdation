@@ -164,10 +164,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
             {(recipe.ingredients || []).length > 0 ? (
               <div className="recipe-ingredients">
                 {recipe.ingredients!.map((ingObj, idx) => {
-                  const ingName =
-                    ingObj.ingredientName ||
-                    ingObj.ingredient?.ingredientName ||
-                    "Nguyên liệu";
+                  const ingName = ingObj.ingredientName || "Nguyên liệu";
 
                   const qty = ingObj.quantity
                     ? `${ingObj.quantity}${
