@@ -100,7 +100,7 @@ export const userIngredientService = {
 
     if (rawNames.length === 0) return null;
 
-    const results = [];
+    const results: any[] = [];
     for (const nameClean of rawNames) {
       let ingredient = await prisma.ingredient.findFirst({
         where: { ingredientName: { equals: nameClean.toLowerCase(), mode: "insensitive" } },
