@@ -10,6 +10,8 @@ CREATE TABLE "Role" (
     CONSTRAINT "Role_pkey" PRIMARY KEY ("role_id")
 );
 
+ALTER TABLE "Role" SET (schema_locked = false);
+
 -- CreateTable
 CREATE TABLE "users" (
     "user_id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -41,6 +43,9 @@ CREATE TABLE "categories" (
     CONSTRAINT "categories_pkey" PRIMARY KEY ("category_id")
 );
 
+ALTER TABLE "categories" SET (schema_locked = false);
+
+
 -- CreateTable
 CREATE TABLE "ingredients" (
     "ingredient_id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -53,6 +58,8 @@ CREATE TABLE "ingredients" (
     CONSTRAINT "ingredients_pkey" PRIMARY KEY ("ingredient_id")
 );
 
+ALTER TABLE "ingredients" SET (schema_locked = false);
+
 -- CreateTable
 CREATE TABLE "ingredient_category" (
     "ingredient_id" UUID NOT NULL,
@@ -60,6 +67,8 @@ CREATE TABLE "ingredient_category" (
 
     CONSTRAINT "ingredient_category_pkey" PRIMARY KEY ("ingredient_id","category_id")
 );
+
+ALTER TABLE "ingredient_category" SET (schema_locked = false);
 
 -- CreateTable
 CREATE TABLE "recipes" (
@@ -78,6 +87,8 @@ CREATE TABLE "recipes" (
     CONSTRAINT "recipes_pkey" PRIMARY KEY ("recipe_id")
 );
 
+ALTER TABLE "recipes" SET (schema_locked = false);
+
 -- CreateTable
 CREATE TABLE "units" (
     "unit_id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -91,6 +102,8 @@ CREATE TABLE "units" (
     CONSTRAINT "units_pkey" PRIMARY KEY ("unit_id")
 );
 
+ALTER TABLE "units" SET (schema_locked = false);
+
 -- CreateTable
 CREATE TABLE "recipe_ingredients" (
     "recipe_id" UUID NOT NULL,
@@ -100,6 +113,8 @@ CREATE TABLE "recipe_ingredients" (
 
     CONSTRAINT "recipe_ingredients_pkey" PRIMARY KEY ("recipe_id","ingredient_id")
 );
+
+ALTER TABLE "recipe_ingredients" SET (schema_locked = false);
 
 -- CreateTable
 CREATE TABLE "recipe_steps" (
@@ -111,6 +126,8 @@ CREATE TABLE "recipe_steps" (
     CONSTRAINT "recipe_steps_pkey" PRIMARY KEY ("step_id")
 );
 
+ALTER TABLE "recipe_steps" SET (schema_locked = false);
+
 -- CreateTable
 CREATE TABLE "user_ingredients" (
     "user_id" UUID NOT NULL,
@@ -121,6 +138,8 @@ CREATE TABLE "user_ingredients" (
     CONSTRAINT "user_ingredients_pkey" PRIMARY KEY ("user_id","ingredient_id")
 );
 
+ALTER TABLE "user_ingredients" SET (schema_locked = false);
+
 -- CreateTable
 CREATE TABLE "recipe_categories" (
     "recipe_id" UUID NOT NULL,
@@ -128,6 +147,8 @@ CREATE TABLE "recipe_categories" (
 
     CONSTRAINT "recipe_categories_pkey" PRIMARY KEY ("recipe_id","category_id")
 );
+
+ALTER TABLE "recipe_categories" SET (schema_locked = false);
 
 -- CreateTable
 CREATE TABLE "refresh_tokens" (
@@ -141,11 +162,15 @@ CREATE TABLE "refresh_tokens" (
     CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("id")
 );
 
+ALTER TABLE "refresh_tokens" SET (schema_locked = false);
+
 -- CreateTable
 CREATE TABLE "_UserRoles" (
     "A" UUID NOT NULL,
     "B" UUID NOT NULL
 );
+
+ALTER TABLE "_UserRoles" SET (schema_locked = false);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
