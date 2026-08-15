@@ -31,6 +31,18 @@ export const AdminPage: React.FC = () => {
   const [searchQ, setSearchQ] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [apiLoadingCount, setApiLoadingCount] = useState(0);
+
+  const startApiLoading = () => {
+    setApiLoadingCount((count) => count + 1);
+  };
+
+  const stopApiLoading = () => {
+    setApiLoadingCount((count) => Math.max(0, count - 1));
+  };
+
+  const isApiLoading = apiLoadingCount > 0;
+
   // Modal Thêm món ăn state
   // const [showAddModal, setShowAddModal] = useState(false);
   const [recipeName, setRecipeName] = useState("");
@@ -60,19 +72,26 @@ export const AdminPage: React.FC = () => {
   }, [currentUser, authLoading]);
 
   const loadStats = async () => {
+    startApiLoading();
+
     try {
       const res = await fetchWithAuth("/api/admin/stats");
       const json = await res.json();
+
       if (json.success && json.data) {
         setStats(json.data);
       }
     } catch (err) {
       console.error("Load admin stats error:", err);
+    } finally {
+      stopApiLoading();
     }
   };
 
   const loadAdminRecipes = async (p = 1, q = "") => {
     setLoading(true);
+    startApiLoading();
+
     try {
       const url = `/api/admin/recipes?page=${p}&limit=10&q=${encodeURIComponent(q)}`;
       const res = await fetchWithAuth(url);
@@ -87,6 +106,7 @@ export const AdminPage: React.FC = () => {
       console.error("Load admin recipes error:", err);
     } finally {
       setLoading(false);
+      stopApiLoading();
     }
   };
 
@@ -94,10 +114,13 @@ export const AdminPage: React.FC = () => {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa món "${name}" khỏi CSDL?`))
       return;
 
+    startApiLoading();
+
     try {
       const res = await fetchWithAuth(`/api/admin/recipes/${recipeId}`, {
         method: "DELETE",
       });
+
       const json = await res.json();
 
       if (json.success) {
@@ -109,6 +132,8 @@ export const AdminPage: React.FC = () => {
       }
     } catch (err) {
       showToast("Lỗi máy chủ khi xóa món ăn", "error");
+    } finally {
+      stopApiLoading();
     }
   };
 
@@ -205,6 +230,8 @@ export const AdminPage: React.FC = () => {
       steps,
     };
 
+    startApiLoading();
+
     try {
       const isEdit = !!editingRecipe;
 
@@ -247,6 +274,8 @@ export const AdminPage: React.FC = () => {
       console.error("Save recipe error:", err);
 
       showToast("Lỗi máy chủ khi lưu công thức", "error");
+    } finally {
+      stopApiLoading();
     }
   };
 
@@ -434,374 +463,386 @@ export const AdminPage: React.FC = () => {
   };
 
   return (
-    <div className="admin-page-react">
-      {/* Admin Navbar */}
-      <header className="admin-navbar">
-        <Link to="/admin" className="admin-brand">
-          <ChefHat size={26} />
-          <span>SmartCook</span>
-          <span className="admin-badge">Admin Panel</span>
-        </Link>
-        <nav className="admin-nav-tabs">
-          <Link to="/admin" className="admin-nav-tab active">
-            Quản lý
-          </Link>
-          <Link to="/admin/dashboard" className="admin-nav-tab">
-            Thống kê
-          </Link>
-        </nav>
-        <div className="admin-nav-actions">
-          <Link to="/" className="btn-back-home">
-            <Globe size={16} />
-            <span>Về Trang Chủ</span>
-          </Link>
-          <button className="btn" onClick={handleLogout}>
-            <LogOut size={15} /> Đăng xuất
-          </button>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="admin-container">
-        {/* Stats Grid */}
-        <div className="admin-stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon-wrapper stat-bg-orange">
-              <ChefHat size={20} />
-            </div>
-            <div className="stat-info">
-              <h4>Tổng Công Thức</h4>
-              <div className="stat-number">
-                {stats ? stats.totalRecipes.toLocaleString("vi-VN") : "..."}
-              </div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon-wrapper stat-bg-blue">
-              <Users size={20} />
-            </div>
-            <div className="stat-info">
-              <h4>Tổng Người Dùng</h4>
-              <div className="stat-number">
-                {stats ? stats.totalUsers.toLocaleString("vi-VN") : "..."}
-              </div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon-wrapper stat-bg-green">
-              <Leaf size={20} />
-            </div>
-            <div className="stat-info">
-              <h4>Tổng Nguyên Liệu</h4>
-              <div className="stat-number">
-                {stats ? stats.totalIngredients.toLocaleString("vi-VN") : "..."}
-              </div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon-wrapper stat-bg-purple">
-              <ShieldCheck size={20} />
-            </div>
-            <div className="stat-info">
-              <h4>Bảo Mật Hệ Thống</h4>
-              <div className="stat-number" style={{ fontSize: "13px" }}>
-                RBAC Admin Active
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recipe Management Panel */}
-        <section className="admin-panel-card">
-          <div className="panel-header">
-            <h2 className="panel-title">Danh sách công thức món ăn</h2>
-            <div className="admin-table-search">
-              <input
-                type="text"
-                className="admin-search-input"
-                placeholder="Tìm theo tên món ăn..."
-                value={searchQ}
-                onChange={(e) => {
-                  setSearchQ(e.target.value);
-                  loadAdminRecipes(1, e.target.value);
-                }}
-              />
-              <button
-                className="btn-create-recipe"
-                onClick={() => {
-                  setEditingRecipe(null);
-
-                  setRecipeName("");
-                  setCookTime(30);
-                  setKhauPhan("2 người");
-                  setRecipeImage("");
-                  setRecipeDesc("");
-                  setRawIngredients("");
-                  setRawSteps("");
-
-                  setShowRecipeModal(true);
-                }}
-              >
-                <PlusCircle size={16} />
-                <span>Thêm Món Mới</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="table-responsive">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Hình ảnh</th>
-                  <th>Tên Món Ăn</th>
-                  <th>Thời gian</th>
-                  <th>Khẩu phần</th>
-                  <th>Số nguyên liệu</th>
-                  <th>Người tạo</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="table-empty-row">
-                      Đang tải danh sách công thức...
-                    </td>
-                  </tr>
-                ) : recipes.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="table-empty-row">
-                      Không tìm thấy công thức món ăn nào.
-                    </td>
-                  </tr>
-                ) : (
-                  recipes.map((recipe: any) => (
-                    <tr key={recipe.recipeId}>
-                      <td>
-                        <img
-                          src={
-                            recipe.recipeImage ||
-                            "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100"
-                          }
-                          className="recipe-thumb"
-                          alt={recipe.recipeName}
-                        />
-                      </td>
-                      <td>
-                        <strong>{recipe.recipeName}</strong>
-                        <div className="recipe-id-caption">
-                          ID: {recipe.recipeId}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="table-inline-icon">
-                          <Clock size={13} /> {recipe.cookTime || 15} phút
-                        </span>
-                      </td>
-                      <td>
-                        <span className="table-inline-icon">
-                          <UtensilsCrossed size={13} />{" "}
-                          {recipe.khauPhan || "2 người"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="table-inline-icon">
-                          <Leaf size={13} /> {(recipe.ingredients || []).length}{" "}
-                          nguyên liệu
-                        </span>
-                      </td>
-                      <td>
-                        <span className="table-inline-icon">
-                          <Users size={13} />{" "}
-                          {recipe.createdByUser || "Hệ thống"}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="btn-action"
-                          onClick={() => handleEditRecipe(recipe)}
-                        >
-                          <Pencil size={14} />
-                          Sửa
-                        </button>
-                        <button
-                          className="btn-action btn-action-delete"
-                          onClick={() =>
-                            handleDeleteRecipe(
-                              recipe.recipeId,
-                              recipe.recipeName,
-                            )
-                          }
-                        >
-                          <Trash2 size={14} /> Xóa
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="admin-pagination">
-              {page > 1 && (
-                <button
-                  className="btn-secondary"
-                  onClick={() => loadAdminRecipes(page - 1, searchQ)}
-                >
-                  ◀ Trang trước
-                </button>
-              )}
-              <span className="admin-pagination-label">
-                Trang {page} / {totalPages}
-              </span>
-              {page < totalPages && (
-                <button
-                  className="btn-secondary"
-                  onClick={() => loadAdminRecipes(page + 1, searchQ)}
-                >
-                  Trang sau ▶
-                </button>
-              )}
-            </div>
-          )}
-        </section>
-      </main>
-
-      {/* Modal Thêm món ăn mới */}
-      {showRecipeModal && (
-        <div
-          className="modal-backdrop open"
-          style={{ display: "flex" }}
-          onClick={() => {
-            setEditingRecipe(null);
-
-            setRecipeName("");
-            setCookTime(30);
-            setKhauPhan("2 người");
-            setRecipeImage("");
-            setRecipeDesc("");
-            setRawIngredients("");
-            setRawSteps("");
-
-            setShowRecipeModal(true);
-          }}
-        >
-          <div
-            className="modal-card auth-modal-card"
-            style={{ maxWidth: "600px" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="btn-close-modal"
-              onClick={() => setShowRecipeModal(false)}
-            >
-              <X size={20} />
-            </button>
-
-            <div className="auth-modal-header">
-              <h3 className="auth-modal-title">
-                {editingRecipe ? "Chỉnh Sửa Công Thức" : "Thêm Món Ăn Mới"}
-              </h3>
-              <p className="auth-modal-subtitle">
-                {editingRecipe
-                  ? "Cập nhật thông tin công thức trong CSDL SmartCook"
-                  : "Điền thông tin công thức mới vào CSDL SmartCook"}
-              </p>
-            </div>
-
-            <form className="form-auth" onSubmit={handleSaveRecipe}>
-              <div className="auth-field-group">
-                <label className="auth-label">Tên món ăn *</label>
-                <input
-                  type="text"
-                  className="input-auth-field"
-                  placeholder="Ví dụ: Phở Bò Bắp Hoa"
-                  value={recipeName}
-                  onChange={(e) => setRecipeName(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="form-auth-row">
-                <div className="auth-field-group">
-                  <label className="auth-label">Thời gian nấu (Phút)</label>
-                  <input
-                    type="number"
-                    className="input-auth-field"
-                    value={cookTime}
-                    onChange={(e) => setCookTime(Number(e.target.value))}
-                    required
-                  />
-                </div>
-                <div className="auth-field-group">
-                  <label className="auth-label">Khẩu phần ăn</label>
-                  <input
-                    type="text"
-                    className="input-auth-field"
-                    value={khauPhan}
-                    onChange={(e) => setKhauPhan(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="auth-field-group">
-                <label className="auth-label">URL Hình ảnh món ăn</label>
-                <input
-                  type="url"
-                  className="input-auth-field"
-                  placeholder="https://images.unsplash.com/..."
-                  value={recipeImage}
-                  onChange={(e) => setRecipeImage(e.target.value)}
-                />
-              </div>
-
-              <div className="auth-field-group">
-                <label className="auth-label">Mô tả tóm tắt món ăn</label>
-                <textarea
-                  className="input-auth-field"
-                  rows={2}
-                  value={recipeDesc}
-                  onChange={(e) => setRecipeDesc(e.target.value)}
-                />
-              </div>
-
-              <div className="auth-field-group">
-                <label className="auth-label">
-                  Nguyên liệu (Mỗi dòng một nguyên liệu, VD: Thịt bò: 300g)
-                </label>
-                <textarea
-                  className="input-auth-field"
-                  rows={3}
-                  value={rawIngredients}
-                  onChange={(e) => setRawIngredients(e.target.value)}
-                />
-              </div>
-
-              <div className="auth-field-group">
-                <label className="auth-label">
-                  Các bước thực hiện (Mỗi dòng một bước)
-                </label>
-                <textarea
-                  className="input-auth-field"
-                  rows={3}
-                  value={rawSteps}
-                  onChange={(e) => setRawSteps(e.target.value)}
-                />
-              </div>
-
-              <button type="submit" className="btn-search-main">
-                {editingRecipe
-                  ? "💾 Cập Nhật Công Thức"
-                  : "💾 Lưu Công Thức Món Ăn"}
-              </button>
-            </form>
+    <>
+      {isApiLoading && (
+        <div className="admin-loading-overlay">
+          <div className="admin-loading-box">
+            <div className="admin-loading-spinner" />
+            <span>Đang xử lý...</span>
           </div>
         </div>
       )}
-    </div>
+      <div className="admin-page-react">
+        {/* Admin Navbar */}
+        <header className="admin-navbar">
+          <Link to="/admin" className="admin-brand">
+            <ChefHat size={26} />
+            <span>SmartCook</span>
+            <span className="admin-badge">Admin Panel</span>
+          </Link>
+          <nav className="admin-nav-tabs">
+            <Link to="/admin" className="admin-nav-tab active">
+              Quản lý
+            </Link>
+            <Link to="/admin/dashboard" className="admin-nav-tab">
+              Thống kê
+            </Link>
+          </nav>
+          <div className="admin-nav-actions">
+            <Link to="/" className="btn-back-home">
+              <Globe size={16} />
+              <span>Về Trang Chủ</span>
+            </Link>
+            <button className="btn" onClick={handleLogout}>
+              <LogOut size={15} /> Đăng xuất
+            </button>
+          </div>
+        </header>
+
+        {/* Main Container */}
+        <main className="admin-container">
+          {/* Stats Grid */}
+          <div className="admin-stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon-wrapper stat-bg-orange">
+                <ChefHat size={20} />
+              </div>
+              <div className="stat-info">
+                <h4>Tổng Công Thức</h4>
+                <div className="stat-number">
+                  {stats ? stats.totalRecipes.toLocaleString("vi-VN") : "..."}
+                </div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon-wrapper stat-bg-blue">
+                <Users size={20} />
+              </div>
+              <div className="stat-info">
+                <h4>Tổng Người Dùng</h4>
+                <div className="stat-number">
+                  {stats ? stats.totalUsers.toLocaleString("vi-VN") : "..."}
+                </div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon-wrapper stat-bg-green">
+                <Leaf size={20} />
+              </div>
+              <div className="stat-info">
+                <h4>Tổng Nguyên Liệu</h4>
+                <div className="stat-number">
+                  {stats
+                    ? stats.totalIngredients.toLocaleString("vi-VN")
+                    : "..."}
+                </div>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon-wrapper stat-bg-purple">
+                <ShieldCheck size={20} />
+              </div>
+              <div className="stat-info">
+                <h4>Bảo Mật Hệ Thống</h4>
+                <div className="stat-number" style={{ fontSize: "13px" }}>
+                  RBAC Admin Active
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recipe Management Panel */}
+          <section className="admin-panel-card">
+            <div className="panel-header">
+              <h2 className="panel-title">Danh sách công thức món ăn</h2>
+              <div className="admin-table-search">
+                <input
+                  type="text"
+                  className="admin-search-input"
+                  placeholder="Tìm theo tên món ăn..."
+                  value={searchQ}
+                  onChange={(e) => {
+                    setSearchQ(e.target.value);
+                    loadAdminRecipes(1, e.target.value);
+                  }}
+                />
+                <button
+                  className="btn-create-recipe"
+                  onClick={() => {
+                    setEditingRecipe(null);
+
+                    setRecipeName("");
+                    setCookTime(30);
+                    setKhauPhan("2 người");
+                    setRecipeImage("");
+                    setRecipeDesc("");
+                    setRawIngredients("");
+                    setRawSteps("");
+
+                    setShowRecipeModal(true);
+                  }}
+                >
+                  <PlusCircle size={16} />
+                  <span>Thêm Món Mới</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="table-responsive">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Hình ảnh</th>
+                    <th>Tên Món Ăn</th>
+                    <th>Thời gian</th>
+                    <th>Khẩu phần</th>
+                    <th>Số nguyên liệu</th>
+                    <th>Người tạo</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="table-empty-row">
+                        Đang tải danh sách công thức...
+                      </td>
+                    </tr>
+                  ) : recipes.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="table-empty-row">
+                        Không tìm thấy công thức món ăn nào.
+                      </td>
+                    </tr>
+                  ) : (
+                    recipes.map((recipe: any) => (
+                      <tr key={recipe.recipeId}>
+                        <td>
+                          <img
+                            src={
+                              recipe.recipeImage ||
+                              "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100"
+                            }
+                            className="recipe-thumb"
+                            alt={recipe.recipeName}
+                          />
+                        </td>
+                        <td>
+                          <strong>{recipe.recipeName}</strong>
+                          <div className="recipe-id-caption">
+                            ID: {recipe.recipeId}
+                          </div>
+                        </td>
+                        <td>
+                          <span className="table-inline-icon">
+                            <Clock size={13} /> {recipe.cookTime || 15} phút
+                          </span>
+                        </td>
+                        <td>
+                          <span className="table-inline-icon">
+                            <UtensilsCrossed size={13} />{" "}
+                            {recipe.khauPhan || "2 người"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="table-inline-icon">
+                            <Leaf size={13} />{" "}
+                            {(recipe.ingredients || []).length} nguyên liệu
+                          </span>
+                        </td>
+                        <td>
+                          <span className="table-inline-icon">
+                            <Users size={13} />{" "}
+                            {recipe.createdByUser || "Hệ thống"}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn-action"
+                            onClick={() => handleEditRecipe(recipe)}
+                          >
+                            <Pencil size={14} />
+                            Sửa
+                          </button>
+                          <button
+                            className="btn-action btn-action-delete"
+                            onClick={() =>
+                              handleDeleteRecipe(
+                                recipe.recipeId,
+                                recipe.recipeName,
+                              )
+                            }
+                          >
+                            <Trash2 size={14} /> Xóa
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="admin-pagination">
+                {page > 1 && (
+                  <button
+                    className="btn-secondary"
+                    onClick={() => loadAdminRecipes(page - 1, searchQ)}
+                  >
+                    ◀ Trang trước
+                  </button>
+                )}
+                <span className="admin-pagination-label">
+                  Trang {page} / {totalPages}
+                </span>
+                {page < totalPages && (
+                  <button
+                    className="btn-secondary"
+                    onClick={() => loadAdminRecipes(page + 1, searchQ)}
+                  >
+                    Trang sau ▶
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+        </main>
+
+        {/* Modal Thêm món ăn mới */}
+        {showRecipeModal && (
+          <div
+            className="modal-backdrop open"
+            style={{ display: "flex" }}
+            onClick={() => {
+              setEditingRecipe(null);
+
+              setRecipeName("");
+              setCookTime(30);
+              setKhauPhan("2 người");
+              setRecipeImage("");
+              setRecipeDesc("");
+              setRawIngredients("");
+              setRawSteps("");
+
+              setShowRecipeModal(true);
+            }}
+          >
+            <div
+              className="modal-card auth-modal-card"
+              style={{ maxWidth: "600px" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="btn-close-modal"
+                onClick={() => setShowRecipeModal(false)}
+              >
+                <X size={20} />
+              </button>
+
+              <div className="auth-modal-header">
+                <h3 className="auth-modal-title">
+                  {editingRecipe ? "Chỉnh Sửa Công Thức" : "Thêm Món Ăn Mới"}
+                </h3>
+                <p className="auth-modal-subtitle">
+                  {editingRecipe
+                    ? "Cập nhật thông tin công thức trong CSDL SmartCook"
+                    : "Điền thông tin công thức mới vào CSDL SmartCook"}
+                </p>
+              </div>
+
+              <form className="form-auth" onSubmit={handleSaveRecipe}>
+                <div className="auth-field-group">
+                  <label className="auth-label">Tên món ăn *</label>
+                  <input
+                    type="text"
+                    className="input-auth-field"
+                    placeholder="Ví dụ: Phở Bò Bắp Hoa"
+                    value={recipeName}
+                    onChange={(e) => setRecipeName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-auth-row">
+                  <div className="auth-field-group">
+                    <label className="auth-label">Thời gian nấu (Phút)</label>
+                    <input
+                      type="number"
+                      className="input-auth-field"
+                      value={cookTime}
+                      onChange={(e) => setCookTime(Number(e.target.value))}
+                      required
+                    />
+                  </div>
+                  <div className="auth-field-group">
+                    <label className="auth-label">Khẩu phần ăn</label>
+                    <input
+                      type="text"
+                      className="input-auth-field"
+                      value={khauPhan}
+                      onChange={(e) => setKhauPhan(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="auth-field-group">
+                  <label className="auth-label">URL Hình ảnh món ăn</label>
+                  <input
+                    type="url"
+                    className="input-auth-field"
+                    placeholder="https://images.unsplash.com/..."
+                    value={recipeImage}
+                    onChange={(e) => setRecipeImage(e.target.value)}
+                  />
+                </div>
+
+                <div className="auth-field-group">
+                  <label className="auth-label">Mô tả tóm tắt món ăn</label>
+                  <textarea
+                    className="input-auth-field"
+                    rows={2}
+                    value={recipeDesc}
+                    onChange={(e) => setRecipeDesc(e.target.value)}
+                  />
+                </div>
+
+                <div className="auth-field-group">
+                  <label className="auth-label">
+                    Nguyên liệu (Mỗi dòng một nguyên liệu, VD: Thịt bò: 300g)
+                  </label>
+                  <textarea
+                    className="input-auth-field"
+                    rows={3}
+                    value={rawIngredients}
+                    onChange={(e) => setRawIngredients(e.target.value)}
+                  />
+                </div>
+
+                <div className="auth-field-group">
+                  <label className="auth-label">
+                    Các bước thực hiện (Mỗi dòng một bước)
+                  </label>
+                  <textarea
+                    className="input-auth-field"
+                    rows={3}
+                    value={rawSteps}
+                    onChange={(e) => setRawSteps(e.target.value)}
+                  />
+                </div>
+
+                <button type="submit" className="btn-search-main">
+                  {editingRecipe
+                    ? "💾 Cập Nhật Công Thức"
+                    : "💾 Lưu Công Thức Món Ăn"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };

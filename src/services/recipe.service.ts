@@ -82,7 +82,10 @@ export const recipeService = {
     const { skip, take, page, limit } = getPagination(query);
 
     const ingList = query.ingredients
-      ? (Array.isArray(query.ingredients) ? query.ingredients : [query.ingredients]).filter((i) => i && i.trim())
+      ? (Array.isArray(query.ingredients)
+          ? query.ingredients
+          : [query.ingredients]
+        ).filter((i) => i && i.trim())
       : [];
 
     const where: Prisma.RecipeWhereInput = {
@@ -93,7 +96,10 @@ export const recipeService = {
             ingredients: {
               some: {
                 ingredient: {
-                  ingredientName: { contains: query.search, mode: "insensitive" },
+                  ingredientName: {
+                    contains: query.search,
+                    mode: "insensitive",
+                  },
                 },
               },
             },
@@ -142,17 +148,23 @@ export const recipeService = {
       cookTime: r.cookTime,
       khauPhan: r.khau_phan || r.khauPhan || "2 người",
       difficulty: r.difficulty,
-      categories: r.recipeCategories ? r.recipeCategories.map((rc: any) => rc.category) : [],
-      ingredients: r.ingredients ? r.ingredients.map((ri: any) => ({
-        ingredientId: ri.ingredientId,
-        ingredientName: ri.ingredient?.ingredientName,
-        quantity: ri.quantity,
-        unit: ri.unit,
-      })) : [],
-      steps: r.steps ? r.steps.map((s: any) => ({
-        stepNumber: s.stepNumber,
-        description: s.description,
-      })) : [],
+      categories: r.recipeCategories
+        ? r.recipeCategories.map((rc: any) => rc.category)
+        : [],
+      ingredients: r.ingredients
+        ? r.ingredients.map((ri: any) => ({
+            ingredientId: ri.ingredientId,
+            ingredientName: ri.ingredient?.ingredientName,
+            quantity: ri.quantity,
+            unit: ri.unit,
+          }))
+        : [],
+      steps: r.steps
+        ? r.steps.map((s: any) => ({
+            stepNumber: s.stepNumber,
+            description: s.description,
+          }))
+        : [],
       createdAt: r.createdAt,
     }));
 

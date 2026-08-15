@@ -458,6 +458,8 @@ export const adminService = {
         },
       });
 
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
       /*
        * 4. Nếu có ingredients
        *    -> thay toàn bộ danh sách
