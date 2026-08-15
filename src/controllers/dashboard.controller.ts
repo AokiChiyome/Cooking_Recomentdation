@@ -64,6 +64,9 @@ export const dashboardController = {
       cookTimeDistribution,
       recipesTrend,
       recentRecipes,
+
+      usersTrend,
+      recentUsers,
     ] = await Promise.all([
       dashboardService.getOverview(),
       dashboardService.recipesByDifficulty(),
@@ -72,6 +75,9 @@ export const dashboardController = {
       dashboardService.cookTimeDistribution(),
       dashboardService.recipesTrend(14),
       dashboardService.recentRecipes(5),
+
+      dashboardService.usersTrend(14),
+      dashboardService.recentUsers(5),
     ]);
 
     res.json({
@@ -84,6 +90,8 @@ export const dashboardController = {
         cookTimeDistribution,
         recipesTrend,
         recentRecipes,
+        usersTrend,
+        recentUsers,
       },
     });
   }),
