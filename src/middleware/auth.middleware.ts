@@ -28,7 +28,21 @@ export function authenticate(
   }
 }
 
-// Ghi chú: bảng "users" trong schema hiện tại chưa có cột role/is_admin,
-// nên middleware phân quyền theo role chưa được thêm ở đây. Nếu sau này
-// bổ sung cột role (hoặc bảng permissions riêng), có thể viết thêm hàm
-// authorize(...roles) tương tự authenticate ở trên để kiểm tra req.user.
+export function authorize(...roles: string[]) {
+  return function (req: Request, _res: Response, next: NextFunction) {
+    if (!req.user) {
+      return next(
+        ApiError.unauthorized("Cần đăng nhập để truy cập tài nguyên này")
+      );
+    }
+
+    const userRole = (req.user as any).userRole || "USER";
+    if (!roles.includes(userRole)) {
+      return next(
+        ApiError.forbidden("Bạn không có quyền truy cập tài nguyên này")
+      );
+    }
+
+    next();
+  };
+}

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { dashboardController } from "../controllers/dashboard.controller";
-import { authenticate } from "../middleware/auth.middleware";
+import { authenticate, authorize } from "../middleware/auth.middleware";
 import { validateQuery } from "../middleware/validate.middleware";
 import {
   dashboardLimitQuerySchema,
@@ -9,10 +9,7 @@ import {
 
 const router = Router();
 
-// Toàn bộ API dashboard yêu cầu đăng nhập. Schema hiện chưa có cột role/is_admin
-// nên tạm thời áp dụng cho mọi user đã đăng nhập — nếu cần giới hạn chỉ admin,
-// bổ sung cột role vào bảng users rồi thêm middleware authorize("ADMIN").
-router.use(authenticate);
+router.use(authenticate, authorize("ADMIN"));
 
 // Gộp toàn bộ dữ liệu cho 1 lần load trang dashboard
 router.get("/summary", dashboardController.summary);

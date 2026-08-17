@@ -98,8 +98,8 @@ model Recipe {
   recipeName        String             @map("recipe_name")
   recipeDescription String?            @map("recipe_description")
   cookTime          Int                @map("cook_time")
-  khau_phan         String?
-  hinh_anh          String?
+  khauPhan          String?            @map("khau_phan")
+  recipeImage       String?            @map("recipe_image")
   difficulty        String             @default("0") @db.Char(1)
   createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy         String?            @map("created_by") @db.Uuid

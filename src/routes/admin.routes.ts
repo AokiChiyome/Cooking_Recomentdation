@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { adminController } from "../controllers/admin.controller";
-import { authenticate } from "../middleware/auth.middleware";
+import { authenticate, authorize } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.use(authenticate);
+router.use(authenticate, authorize("ADMIN"));
 
 router.get("/stats", adminController.getStats);
 router.get("/recipes", adminController.getRecipes);

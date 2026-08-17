@@ -22,13 +22,7 @@ import { ChefHat, Globe, LogOut, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import "./admin.css";
 import type { DashboardSummary } from "./dashboardStats";
-
-const DIFFICULTY_LABELS: Record<string, string> = {
-  "0": "Dễ",
-  "1": "Trung bình",
-  "2": "Khó",
-  "3": "Rất khó",
-};
+import { DIFFICULTY_LABELS } from "../../constants/difficulty";
 
 const PIE_COLORS = ["#c1432e", "#b8862e", "#5b7553", "#8a6f4e", "#a45a3f"];
 

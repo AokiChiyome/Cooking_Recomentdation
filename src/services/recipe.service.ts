@@ -12,6 +12,7 @@ interface ListQuery {
   limit?: number;
   search?: string;
   ingredients?: string | string[];
+  ingredientId?: string;
   categoryId?: string;
   difficulty?: string;
   maxCookTime?: number;
@@ -27,8 +28,8 @@ function formatRecipe(recipe: any) {
   const { recipeCategories, ingredients, ...rest } = recipe;
   return {
     ...rest,
-    recipeImage: recipe.recipeImage || recipe.hinh_anh,
-    khauPhan: recipe.khau_phan || recipe.khauPhan || "2 người",
+    recipeImage: recipe.recipeImage || null,
+    khauPhan: recipe.khauPhan || "2 người",
     ingredients: ingredients?.map((ri: any) => ({
       ingredientId: ri.ingredientId,
       ingredientName: ri.ingredient?.ingredientName,
@@ -122,6 +123,9 @@ export const recipeService = {
       ...(query.categoryId && {
         recipeCategories: { some: { categoryId: query.categoryId } },
       }),
+      ...(query.ingredientId && {
+        ingredients: { some: { ingredientId: query.ingredientId } },
+      }),
     };
 
     const [items, total] = await Promise.all([
@@ -143,10 +147,9 @@ export const recipeService = {
       recipeId: r.recipeId,
       recipeName: r.recipeName,
       recipeDescription: r.recipeDescription,
-      recipeImage: r.hinh_anh || r.recipeImage,
-      hinh_anh: r.hinh_anh,
+      recipeImage: r.recipeImage || null,
       cookTime: r.cookTime,
-      khauPhan: r.khau_phan || r.khauPhan || "2 người",
+      khauPhan: r.khauPhan || "2 người",
       difficulty: r.difficulty,
       categories: r.recipeCategories
         ? r.recipeCategories.map((rc: any) => rc.category)
@@ -194,7 +197,7 @@ export const recipeService = {
       const recipe = await tx.recipe.create({
         data: {
           recipeName: input.recipeName,
-          hinh_anh: input.recipeImage ?? null,
+          recipeImage: input.recipeImage ?? null,
           recipeDescription: input.recipeDescription ?? null,
           cookTime: input.cookTime,
           difficulty: input.difficulty ?? "0",
@@ -225,7 +228,6 @@ export const recipeService = {
           data: input.categoryIds.map((categoryId) => ({
             recipeId: recipe.recipeId,
             categoryId: categoryId,
-            createdBy: userId,
           })),
         });
       }
@@ -243,6 +245,7 @@ export const recipeService = {
     const result = await prisma.$transaction(async (tx) => {
       const existing = await tx.recipe.findUnique({ where: { recipeId: id } });
       if (!existing) throw ApiError.notFound("Không tìm thấy công thức nấu ăn");
+      if (existing.createdBy !== userId) throw ApiError.forbidden("Bạn chỉ có thể sửa công thức của mình");
 
       if (input.ingredients) {
         const ingredientIds = input.ingredients.map((i) => i.ingredientId);
@@ -310,7 +313,6 @@ export const recipeService = {
             data: input.categoryIds.map((categoryId) => ({
               recipeId: id,
               categoryId: categoryId,
-              createdBy: userId,
             })),
           });
         }
@@ -325,10 +327,11 @@ export const recipeService = {
     return formatRecipe(result);
   },
 
-  async remove(id: string) {
+  async remove(id: string, userId: string) {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.recipe.findUnique({ where: { recipeId: id } });
       if (!existing) throw ApiError.notFound("Không tìm thấy công thức nấu ăn");
+      if (existing.createdBy !== userId) throw ApiError.forbidden("Bạn chỉ có thể xoá công thức của mình");
 
       // Xoá tường minh theo thứ tự để đảm bảo tính nhất quán trong transaction
       // (dù các FK liên quan đã có onDelete: Cascade sẵn).
