@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { categoryController } from "../controllers/category.controller";
-import { authenticate } from "../middleware/auth.middleware";
+import { authenticate, authorize } from "../middleware/auth.middleware";
 import { validate, validateParams, validateQuery } from "../middleware/validate.middleware";
 import {
   createCategorySchema,
@@ -14,14 +14,27 @@ const idParamSchema = uuidParamSchema("id");
 
 router.get("/", validateQuery(listCategoryQuerySchema), categoryController.list);
 router.get("/:id", validateParams(idParamSchema), categoryController.getById);
-router.post("/", authenticate, validate(createCategorySchema), categoryController.create);
+router.post(
+  "/",
+  authenticate,
+  authorize("ADMIN"),
+  validate(createCategorySchema),
+  categoryController.create
+);
 router.put(
   "/:id",
   authenticate,
+  authorize("ADMIN"),
   validateParams(idParamSchema),
   validate(updateCategorySchema),
   categoryController.update
 );
-router.delete("/:id", authenticate, validateParams(idParamSchema), categoryController.remove);
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("ADMIN"),
+  validateParams(idParamSchema),
+  categoryController.remove
+);
 
 export default router;

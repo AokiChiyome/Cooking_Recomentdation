@@ -27,7 +27,8 @@ export const recipeController = {
   }),
 
   remove: asyncHandler(async (req: Request, res: Response) => {
-    await recipeService.remove(req.params.id);
+    if (!req.user) throw ApiError.unauthorized();
+    await recipeService.remove(req.params.id, req.user.userId);
     res.json({ success: true, message: "Xoá công thức thành công" });
   }),
 

@@ -36,12 +36,20 @@ export const categoryService = {
         skip,
         take,
         orderBy: { categoryName: "asc" },
-        include: { parent: true },
+        include: {
+          parent: true,
+          _count: { select: { recipeCategories: true } },
+        },
       }),
       prisma.category.count({ where }),
     ]);
 
-    return { items, meta: buildMeta(total, page, limit) };
+    const formatted = items.map((c: any) => {
+      const { _count, ...rest } = c;
+      return { ...rest, recipeCount: _count.recipeCategories };
+    });
+
+    return { items: formatted, meta: buildMeta(total, page, limit) };
   },
 
   async getById(id: string) {
@@ -94,7 +102,7 @@ export const categoryService = {
         where: { categoryId: id },
         data: {
           ...(input.ingredientCategoryName !== undefined && {
-            ingredientCategoryName: input.ingredientCategoryName,
+            categoryName: input.ingredientCategoryName,
           }),
           ...(input.parentCategoryId !== undefined && {
             parentCategoryId: input.parentCategoryId,

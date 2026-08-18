@@ -37,6 +37,7 @@ export const updateRecipeSchema = z.object({
 export const listRecipeQuerySchema = paginationQuerySchema.extend({
   search: z.string().optional(),
   ingredients: z.union([z.string(), z.array(z.string())]).optional(),
+  ingredientId: z.string().uuid().optional(),
   categoryId: z.string().uuid().optional(),
   difficulty: z.enum(["0", "1", "2", "3", "4", "5"]).optional(),
   maxCookTime: z.coerce.number().int().positive().optional(),

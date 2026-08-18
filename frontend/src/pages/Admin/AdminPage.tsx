@@ -3,6 +3,13 @@ import { useAuth } from "../../context/AuthContext";
 import { fetchWithAuth } from "../../services/api";
 import { isAdminUser } from "../../types";
 import type { AdminStats, Recipe } from "../../types";
+import { AdminCategoryPage } from "./AdminCategoryPage";
+import { AdminIngredientPage } from "./AdminIngredientPage";
+import { AdminUnitPage } from "./AdminUnitPage";
+import { RecipeDetailModal } from "../../components/recipeDetailModal/RecipeDetailModal";
+import { DIFFICULTY_OPTIONS } from "../../constants/difficulty";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import type { Category } from "../../types";
 
 import {
   ChefHat,
@@ -20,9 +27,13 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import "./admin.css";
+
+type AdminTab = "recipes" | "categories" | "ingredients" | "units";
+
 export const AdminPage: React.FC = () => {
   const { currentUser, authLoading, handleLogout, showToast } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<AdminTab>("recipes");
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -52,8 +63,12 @@ export const AdminPage: React.FC = () => {
   const [recipeDesc, setRecipeDesc] = useState("");
   const [rawIngredients, setRawIngredients] = useState("");
   const [rawSteps, setRawSteps] = useState("");
+  const [difficulty, setDifficulty] = useState("0");
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+  const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
 
   // Security check: Redirect if not ADMIN
   useEffect(() => {
@@ -68,8 +83,35 @@ export const AdminPage: React.FC = () => {
     }
 
     loadStats();
-    loadAdminRecipes(1, searchQ);
+    loadCategories();
   }, [currentUser, authLoading]);
+
+  // Refetch mỗi khi mở dialog tạo/sửa công thức, để danh mục vừa tạo ở tab
+  // "Danh Mục" (nếu có) luôn xuất hiện thay vì dùng danh sách cũ lúc mount.
+  useEffect(() => {
+    if (showRecipeModal) {
+      loadCategories();
+    }
+  }, [showRecipeModal]);
+
+  const debouncedSearchQ = useDebouncedValue(searchQ, 400);
+
+  useEffect(() => {
+    if (authLoading || !isAdminUser(currentUser)) return;
+    loadAdminRecipes(1, debouncedSearchQ);
+  }, [debouncedSearchQ, authLoading, currentUser]);
+
+  const loadCategories = async () => {
+    try {
+      const res = await fetch("/api/categories?limit=100");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setAllCategories(json.data);
+      }
+    } catch (err) {
+      console.error("Load categories error:", err);
+    }
+  };
 
   const loadStats = async () => {
     startApiLoading();
@@ -226,6 +268,8 @@ export const AdminPage: React.FC = () => {
       khauPhan,
       recipeImage,
       recipeDescription: recipeDesc,
+      difficulty,
+      categoryIds,
       ingredients,
       steps,
     };
@@ -264,6 +308,8 @@ export const AdminPage: React.FC = () => {
         setRecipeDesc("");
         setRawIngredients("");
         setRawSteps("");
+        setDifficulty("0");
+        setCategoryIds([]);
 
         loadStats();
         loadAdminRecipes(isEdit ? page : 1, searchQ);
@@ -443,6 +489,10 @@ export const AdminPage: React.FC = () => {
     setKhauPhan(recipe.khauPhan || "2 người");
     setRecipeImage(recipe.recipeImage || recipe.hinh_anh || "");
     setRecipeDesc(recipe.recipeDescription || "");
+    setDifficulty(recipe.difficulty || "0");
+    setCategoryIds(
+      (recipe.categories || []).map((c: Category) => c.categoryId),
+    );
 
     const ingredientsText = (recipe.ingredients || [])
       .map((ingredient: any) => {
@@ -551,7 +601,41 @@ export const AdminPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Tab Navigation */}
+          <div className="admin-subtabs">
+            <button
+              className={`admin-subtab${activeTab === "recipes" ? " active" : ""}`}
+              onClick={() => setActiveTab("recipes")}
+            >
+              Công Thức
+            </button>
+            <button
+              className={`admin-subtab${activeTab === "categories" ? " active" : ""}`}
+              onClick={() => setActiveTab("categories")}
+            >
+              Danh Mục
+            </button>
+            <button
+              className={`admin-subtab${activeTab === "ingredients" ? " active" : ""}`}
+              onClick={() => setActiveTab("ingredients")}
+            >
+              Nguyên Liệu
+            </button>
+            <button
+              className={`admin-subtab${activeTab === "units" ? " active" : ""}`}
+              onClick={() => setActiveTab("units")}
+            >
+              Đơn Vị
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === "categories" && <AdminCategoryPage />}
+          {activeTab === "ingredients" && <AdminIngredientPage />}
+          {activeTab === "units" && <AdminUnitPage />}
+
           {/* Recipe Management Panel */}
+          {activeTab === "recipes" && (
           <section className="admin-panel-card">
             <div className="panel-header">
               <h2 className="panel-title">Danh sách công thức món ăn</h2>
@@ -561,10 +645,7 @@ export const AdminPage: React.FC = () => {
                   className="admin-search-input"
                   placeholder="Tìm theo tên món ăn..."
                   value={searchQ}
-                  onChange={(e) => {
-                    setSearchQ(e.target.value);
-                    loadAdminRecipes(1, e.target.value);
-                  }}
+                  onChange={(e) => setSearchQ(e.target.value)}
                 />
                 <button
                   className="btn-create-recipe"
@@ -578,6 +659,8 @@ export const AdminPage: React.FC = () => {
                     setRecipeDesc("");
                     setRawIngredients("");
                     setRawSteps("");
+                    setDifficulty("0");
+                    setCategoryIds([]);
 
                     setShowRecipeModal(true);
                   }}
@@ -618,7 +701,11 @@ export const AdminPage: React.FC = () => {
                   ) : (
                     recipes.map((recipe: any) => (
                       <tr key={recipe.recipeId}>
-                        <td>
+                        <td
+                          style={{ cursor: "pointer" }}
+                          onClick={() => setViewingRecipe(recipe)}
+                          title="Xem chi tiết công thức"
+                        >
                           <img
                             src={
                               recipe.recipeImage ||
@@ -628,7 +715,11 @@ export const AdminPage: React.FC = () => {
                             alt={recipe.recipeName}
                           />
                         </td>
-                        <td>
+                        <td
+                          style={{ cursor: "pointer" }}
+                          onClick={() => setViewingRecipe(recipe)}
+                          title="Xem chi tiết công thức"
+                        >
                           <strong>{recipe.recipeName}</strong>
                           <div className="recipe-id-caption">
                             ID: {recipe.recipeId}
@@ -709,6 +800,7 @@ export const AdminPage: React.FC = () => {
               </div>
             )}
           </section>
+          )}
         </main>
 
         {/* Modal Thêm món ăn mới */}
@@ -716,19 +808,7 @@ export const AdminPage: React.FC = () => {
           <div
             className="modal-backdrop open"
             style={{ display: "flex" }}
-            onClick={() => {
-              setEditingRecipe(null);
-
-              setRecipeName("");
-              setCookTime(30);
-              setKhauPhan("2 người");
-              setRecipeImage("");
-              setRecipeDesc("");
-              setRawIngredients("");
-              setRawSteps("");
-
-              setShowRecipeModal(true);
-            }}
+            onClick={() => setShowRecipeModal(false)}
           >
             <div
               className="modal-card auth-modal-card"
@@ -810,6 +890,72 @@ export const AdminPage: React.FC = () => {
                 </div>
 
                 <div className="auth-field-group">
+                  <label className="auth-label">Độ khó</label>
+                  <select
+                    className="input-auth-field"
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                  >
+                    {DIFFICULTY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="auth-field-group">
+                  <label className="auth-label">Danh mục</label>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                      padding: "10px 12px",
+                      background: "var(--paper)",
+                      border: "1px solid var(--rule)",
+                      borderRadius: "3px",
+                      maxHeight: "140px",
+                      overflowY: "auto",
+                    }}
+                  >
+                    {allCategories.length === 0 ? (
+                      <span
+                        style={{ fontSize: "12.5px", color: "var(--ink-soft)" }}
+                      >
+                        Chưa có danh mục nào — tạo ở tab "Danh Mục" trước.
+                      </span>
+                    ) : (
+                      allCategories.map((cat) => (
+                        <label
+                          key={cat.categoryId}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            fontSize: "13px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={categoryIds.includes(cat.categoryId)}
+                            onChange={(e) => {
+                              setCategoryIds((prev) =>
+                                e.target.checked
+                                  ? [...prev, cat.categoryId]
+                                  : prev.filter((id) => id !== cat.categoryId),
+                              );
+                            }}
+                          />
+                          {cat.categoryName}
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="auth-field-group">
                   <label className="auth-label">
                     Nguyên liệu (Mỗi dòng một nguyên liệu, VD: Thịt bò: 300g)
                   </label>
@@ -842,6 +988,12 @@ export const AdminPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Modal Xem chi tiết công thức (chỉ xem, không sửa) */}
+        <RecipeDetailModal
+          recipe={viewingRecipe}
+          onClose={() => setViewingRecipe(null)}
+        />
       </div>
     </>
   );

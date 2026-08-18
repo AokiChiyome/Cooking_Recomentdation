@@ -46,7 +46,10 @@ export const ingredientService = {
         skip,
         take,
         orderBy: { ingredientName: "asc" },
-        include: { categoryLinks: { include: { category: true } } },
+        include: {
+          categoryLinks: { include: { category: true } },
+          _count: { select: { recipeIngredients: true } },
+        },
       }),
       prisma.ingredient.count({ where }),
     ]);
@@ -67,10 +70,14 @@ export const ingredientService = {
   },
 
   formatIngredient(ingredient: any) {
-    const { categoryLinks, ...rest } = ingredient;
+    const { categoryLinks, _count, ...rest } = ingredient;
     return {
       ...rest,
       categories: categoryLinks?.map((link: any) => link.category) ?? [],
+      // recipeCount chỉ có khi query có include _count (hiện tại là list()).
+      // getById/create/update không query _count nên sẽ không có field này,
+      // giữ nguyên hành vi cũ thay vì trả giá trị 0 gây hiểu nhầm.
+      ...(_count !== undefined && { recipeCount: _count.recipeIngredients }),
     };
   },
 

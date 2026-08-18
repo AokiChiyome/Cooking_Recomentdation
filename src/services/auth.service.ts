@@ -95,7 +95,12 @@ export const authService = {
   },
 
   async issueTokens(userId: string, email: string) {
-    const payload = { userId, email };
+    // Role của user luôn được xác định từ quan hệ User.role (Role[]) thông qua
+    // getProfile(), KHÔNG nhận role như tham số từ caller — tránh lệch dữ liệu
+    // giữa các nơi phát hành token (register/login/refresh).
+    const userProfile = await authService.getProfile(userId);
+
+    const payload = { userId, email, userRole: userProfile.userRole };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
 
@@ -110,8 +115,6 @@ export const authService = {
         expiresAt,
       },
     });
-
-    const userProfile = await authService.getProfile(userId);
 
     return {
       user: userProfile,
@@ -171,6 +174,7 @@ export const authService = {
 
     if (!user) throw ApiError.notFound("Không tìm thấy thông tin người dùng");
 
+    // Nguồn duy nhất cho role: quan hệ User.role (Role[]), không dùng cột phẳng user_role.
     const roleName = user.role && user.role.length > 0 ? user.role[0].roleName : "USER";
 
     return {
@@ -178,6 +182,7 @@ export const authService = {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      userRole: roleName,
       role: roleName,
       createdAt: user.createdAt,
     };

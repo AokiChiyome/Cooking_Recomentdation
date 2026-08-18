@@ -91,6 +91,19 @@ async function resolveUnit(
   return unit.unitId;
 }
 
+async function ensureCategoriesExist(
+  tx: Prisma.TransactionClient,
+  categoryIds: string[],
+) {
+  if (categoryIds.length === 0) return;
+  const count = await tx.category.count({
+    where: { categoryId: { in: categoryIds } },
+  });
+  if (count !== categoryIds.length) {
+    throw ApiError.badRequest("Một hoặc nhiều categoryId không tồn tại");
+  }
+}
+
 async function resolveIngredients(
   tx: Prisma.TransactionClient,
   ingredients: any[],
@@ -222,6 +235,11 @@ export const adminService = {
               stepNumber: "asc",
             },
           },
+          recipeCategories: {
+            include: {
+              category: true,
+            },
+          },
         },
       }),
 
@@ -233,8 +251,8 @@ export const adminService = {
       recipeName: r.recipeName,
       recipeDescription: r.recipeDescription,
 
-      hinh_anh: r.hinh_anh,
-      recipeImage: r.hinh_anh,
+      hinh_anh: r.recipeImage,
+      recipeImage: r.recipeImage,
 
       cookTime: r.cookTime,
       khauPhan: r.khau_phan || r.khauPhan || "2 người",
@@ -259,6 +277,9 @@ export const adminService = {
           unit: ri.unit,
           unitId: ri.unitId,
         })) ?? [],
+
+      categories:
+        r.recipeCategories?.map((rc: any) => rc.category) ?? [],
 
       steps:
         r.steps?.map((s: any) => ({
@@ -293,6 +314,11 @@ export const adminService = {
         userId,
       );
 
+      const categoryIds: string[] = Array.isArray(input.categoryIds)
+        ? input.categoryIds
+        : [];
+      await ensureCategoriesExist(tx, categoryIds);
+
       /*
        * 2. Tạo Recipe
        */
@@ -302,9 +328,9 @@ export const adminService = {
 
           cookTime: input.cookTime || 15,
 
-          khau_phan: input.khauPhan || "2 người",
+          khauPhan: input.khauPhan || "2 người",
 
-          hinh_anh: input.recipeImage || input.hinh_anh || "",
+          recipeImage: input.recipeImage || input.hinh_anh || "",
 
           recipeDescription: input.recipeDescription || "",
 
@@ -354,7 +380,19 @@ export const adminService = {
       }
 
       /*
-       * 5. Trả về Recipe đầy đủ
+       * 5. Đăng ký danh mục vào Recipe
+       */
+      if (categoryIds.length > 0) {
+        await tx.recipeCategory.createMany({
+          data: categoryIds.map((categoryId) => ({
+            recipeId: recipe.recipeId,
+            categoryId,
+          })),
+        });
+      }
+
+      /*
+       * 6. Trả về Recipe đầy đủ
        */
       return tx.recipe.findUniqueOrThrow({
         where: {
@@ -414,6 +452,10 @@ export const adminService = {
         ingredients = await resolveIngredients(tx, input.ingredients, userId);
       }
 
+      if (Array.isArray(input.categoryIds)) {
+        await ensureCategoriesExist(tx, input.categoryIds);
+      }
+
       /*
        * 3. Update Recipe
        */
@@ -432,15 +474,15 @@ export const adminService = {
           }),
 
           ...(input.khauPhan !== undefined && {
-            khau_phan: input.khauPhan,
+            khauPhan: input.khauPhan,
           }),
 
           ...(input.recipeImage !== undefined && {
-            hinh_anh: input.recipeImage,
+            recipeImage: input.recipeImage,
           }),
 
           ...(input.hinh_anh !== undefined && {
-            hinh_anh: input.hinh_anh,
+            recipeImage: input.hinh_anh,
           }),
 
           ...(input.recipeDescription !== undefined && {
@@ -515,7 +557,28 @@ export const adminService = {
       }
 
       /*
-       * 6. Trả về Recipe sau update
+       * 6. Nếu có categoryIds
+       *    -> thay toàn bộ danh mục
+       */
+      if (Array.isArray(input.categoryIds)) {
+        await tx.recipeCategory.deleteMany({
+          where: {
+            recipeId: id,
+          },
+        });
+
+        if (input.categoryIds.length > 0) {
+          await tx.recipeCategory.createMany({
+            data: input.categoryIds.map((categoryId: string) => ({
+              recipeId: id,
+              categoryId,
+            })),
+          });
+        }
+      }
+
+      /*
+       * 7. Trả về Recipe sau update
        */
       return tx.recipe.findUniqueOrThrow({
         where: {

@@ -12,6 +12,27 @@ export interface Role {
   roleName: string;
 }
 
+export interface Category {
+  categoryId: string;
+  categoryName: string;
+  category_type?: string;
+  parentCategoryId?: string;
+  parent?: Category | null;
+  recipeCount?: number;
+}
+
+export interface Unit {
+  unitId: string;
+  unitName: string;
+  symbol: string;
+}
+
+export interface Ingredient {
+  ingredientId: string;
+  ingredientName: string;
+  recipeCount?: number;
+}
+
 export interface IngredientUnit {
   unitId: string;
   unitName: string;
@@ -69,7 +90,15 @@ export interface AdminStats {
 }
 
 export function isAdminUser(user: any): boolean {
-  if (!user || !user.role) return false;
+  if (!user) return false;
+
+  // Check userRole field (new approach)
+  if (user.userRole && user.userRole.toUpperCase() === "ADMIN") {
+    return true;
+  }
+
+  // Check role array (legacy approach)
+  if (!user.role) return false;
   if (typeof user.role === "string") {
     return user.role.toUpperCase() === "ADMIN";
   }

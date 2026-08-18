@@ -50,6 +50,7 @@ export const dashboardService = {
   async getOverview() {
     const [
       totalRecipes,
+      totalCategories,
       totalIngredients,
       totalUsers,
       totalIngredientCategories,
@@ -58,6 +59,7 @@ export const dashboardService = {
       avgCookTime,
     ] = await Promise.all([
       prisma.recipe.count(),
+      prisma.category.count(),
       prisma.ingredient.count(),
       prisma.user.count(),
       prisma.category.count(),
@@ -68,6 +70,7 @@ export const dashboardService = {
 
     return {
       totalRecipes,
+      totalCategories,
       totalIngredients,
       totalUsers,
       totalIngredientCategories,
@@ -213,7 +216,7 @@ export const dashboardService = {
       select: {
         recipeId: true,
         recipeName: true,
-        hinh_anh: true,
+        recipeImage: true,
         cookTime: true,
         difficulty: true,
         createdAt: true,

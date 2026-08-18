@@ -224,6 +224,77 @@
   border-color: var(--paprika);
 }
 
+/* ---------- Sub-tabs (Công thức / Danh mục / Nguyên liệu / Đơn vị) ---------- */
+
+.admin-subtabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-subtab {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--rule);
+  padding: 8px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.admin-subtab:hover {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.admin-subtab.active {
+  color: var(--paprika);
+  background: var(--paprika-tint);
+  border-color: var(--paprika);
+}
+
+/* Cho phép modal-card đổi nhãn góc động qua data-modal-label,
+   không ảnh hưởng modal "Thêm món ăn mới" hiện tại (không set attribute này). */
+.modal-card[data-modal-label]::before {
+  content: attr(data-modal-label);
+}
+
+/* ---------- Recipe count link (Danh mục / Nguyên liệu) ---------- */
+
+.recipe-count-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+
+.recipe-count-link:hover {
+  color: var(--paprika);
+}
+
+.recipe-count-link:disabled {
+  cursor: default;
+  text-decoration: none;
+  color: var(--ink-soft);
+}
+
 /* ---------- Generic index-card (dùng cho dashboard charts) ---------- */
 
 .card {

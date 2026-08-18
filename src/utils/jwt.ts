@@ -4,6 +4,7 @@ import { env } from "../config/env";
 export interface JwtPayload {
   userId: string;
   email: string;
+  userRole?: string;
 }
 
 import { randomUUID } from "crypto";
